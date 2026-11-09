@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+
+:root {
+  --bg-primary: #faf9f6;
+  --bg-secondary: #f2f0ea;
+  --bg-muted: #f0eee8;
+  --text-primary: #242722;
+  --text-secondary: #74766f;
+  --text-tertiary: #5a5c55;
+  --text-disabled: #9e9b93;
+  --text-disabled-soft: #b6b4af;
+  --accent-primary: #637c69;
+  --accent-primary-hover: #536a59;
+  --accent-secondary: #b66e53;
+  --accent-secondary-hover: #a05d44;
+  --accent-primary-hover-strong: #526656;
+  --accent-secondary-hover-strong: #a05c43;
+  --surface-deep: #2f342d;
+  --surface-deeper: #1e211d;
+  --surface-deep-hover: #383d35;
+  --border: #e8e5de;
+  --border-subtle: #f0ede6;
+  --card-bg: #ffffff;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family:
+    var(--font-dm-sans),
+    system-ui,
+    -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-serif {
+  font-family: var(--font-dm-serif), Georgia, Cambria, serif;
+}
+
+/* Custom scrollbar for horizontal categories */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

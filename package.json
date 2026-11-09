@@ -1,0 +1,35 @@
+{
+  "name": "stayscape",
+  "version": "1.0.0",
+  "description": "StayScape — AI-powered accommodation booking platform monorepo",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:web": "pnpm --filter @stayscape/web dev",
+    "dev:api": "pnpm --filter @stayscape/api dev",
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter @stayscape/web build",
+    "build:api": "pnpm --filter @stayscape/api build",
+    "clean": "pnpm --filter @stayscape/web clean",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\" --ignore-path .prettierignore",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "prisma:generate": "pnpm --filter @stayscape/api prisma:generate",
+    "prisma:migrate": "pnpm --filter @stayscape/api prisma:migrate",
+    "prisma:studio": "pnpm --filter @stayscape/api prisma:studio",
+    "test": "pnpm -r test",
+    "test:api": "pnpm --filter @stayscape/api test",
+    "test:e2e": "pnpm --filter @stayscape/api test:e2e"
+  },
+  "devDependencies": {
+    "prettier": "3.4.2"
+  }
+}

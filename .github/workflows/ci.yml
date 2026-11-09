@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: stayscape
+          POSTGRES_PASSWORD: stayscape_test
+          POSTGRES_DB: stayscape_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stayscape -d stayscape_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://stayscape:stayscape_test@localhost:5432/stayscape_test?schema=public
+      DIRECT_URL: postgresql://stayscape:stayscape_test@localhost:5432/stayscape_test?schema=public
+      REDIS_URL: redis://localhost:6379
+      ACCESS_TOKEN_SECRET: test-access-token-secret-long-enough-for-ci
+      REFRESH_TOKEN_SECRET: test-refresh-token-secret-long-enough-for-ci
+      RAZORPAY_KEY_ID: rzp_test_placeholder
+      RAZORPAY_KEY_SECRET: test-razorpay-secret
+      RAZORPAY_WEBHOOK_SECRET: test-webhook-secret
+      GROQ_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @stayscape/api prisma:generate
+      - run: pnpm --filter @stayscape/api prisma:validate
+      - run: pnpm --filter @stayscape/api prisma:migrate:deploy
+      - run: pnpm --filter @stayscape/api prisma:seed
+      - run: pnpm lint
+      - run: >-
+          pnpm exec prettier --check
+          apps/api/package.json
+          apps/api/eslint.config.mjs
+          apps/api/src/admin/controllers/admin-dashboard.controller.ts
+          apps/api/src/admin/controllers/reports.controller.ts
+          apps/api/src/admin/decorators/admin-user.decorator.ts
+          apps/api/src/admin/guards/admin.guard.ts
+          apps/api/src/admin/services/admin-payments.service.ts
+          apps/api/src/admin/services/admin-dashboard.service.ts
+          apps/api/src/admin/services/admin-properties.service.ts
+          apps/api/src/admin/services/admin-reports.service.spec.ts
+          apps/api/src/reviews/reviews.service.spec.ts
+          apps/api/src/auth/auth.service.ts
+          apps/api/src/messages/messages.service.ts
+          apps/api/src/redis/redis.service.ts
+          apps/api/test/payments.e2e-spec.ts
+          apps/api/src/auth/strategies/jwt.strategy.ts
+          apps/api/src/auth/services/token.service.ts
+          apps/api/src/auth/services/token.service.spec.ts
+          apps/api/src/messages/messages.gateway.ts
+          apps/api/src/common/middleware/request-context.middleware.ts
+          apps/api/src/payments/webhooks/razorpay-webhook.controller.ts
+          apps/api/src/payments/webhooks/razorpay-webhook.service.ts
+          apps/api/src/payments/webhooks/razorpay-webhook.service.spec.ts
+          apps/api/src/payments/razorpay.service.ts
+          apps/api/src/payments/services/payment-reconciliation.service.spec.ts
+          apps/api/src/config/app.config.ts
+          apps/api/src/config/app.config.spec.ts
+          apps/api/test/bookings.e2e-spec.ts
+          apps/web/next.config.ts
+          apps/web/src/app/stays/page.tsx
+          apps/web/package.json
+          package.json
+          pnpm-workspace.yaml
+          docs/phase-11-audit.md
+          docs/security-threat-model.md
+          docs/database-performance-audit.md
+          docs/api-performance-audit.md
+          docs/frontend-performance-audit.md
+          docs/accessibility-audit.md
+          docs/production-readiness-checklist.md
+          docs/operations-runbook.md
+          .github/workflows/ci.yml
+      - run: pnpm typecheck
+      - run: pnpm --filter @stayscape/api exec jest --runInBand
+      - run: pnpm --filter @stayscape/api exec jest --config ./test/jest-e2e.json --runInBand
+      - run: pnpm build
+      - run: pnpm audit --audit-level high
