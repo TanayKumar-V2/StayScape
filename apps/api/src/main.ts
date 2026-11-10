@@ -9,6 +9,7 @@ import {
   originValidator,
   requestLoggingMiddleware,
 } from './common/middleware/request-context.middleware';
+import { WorkerSchedulerService } from './worker-scheduler.service';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
@@ -95,6 +96,18 @@ async function bootstrap(): Promise<void> {
 
   // ── Graceful shutdown ─────────────────────────────────────────────────────
   app.enableShutdownHooks();
+
+  // ── Singleton workers & schedulers (when running combined in single web service) ──
+  if (process.env['ENABLE_WORKERS'] !== 'false') {
+    try {
+      const scheduler = app.get(WorkerSchedulerService);
+      await scheduler.initRepeatableJobs();
+    } catch (err: unknown) {
+      logger.warn(
+        `Failed to initialize repeatable BullMQ jobs: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
 
   // ── Start listening ───────────────────────────────────────────────────────
   const port = parseInt(process.env['PORT'] ?? '4000', 10);
