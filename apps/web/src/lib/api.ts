@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './api-config';
+import { formatINR } from './utils';
 import type { LoginInput, RegisterInput, UpdateProfileInput, User } from '@/types/auth';
 import type {
   GroupedAmenities,
@@ -109,6 +110,73 @@ export interface ApiResponse<T> {
   data: T | null;
   error?: string;
   status: number;
+}
+
+interface BookingApiRecord extends Partial<SerializedBookingResponse> {
+  property?: { title?: string; slug?: string; city?: string; coverImage?: string | null };
+  stay?: { checkIn?: string; checkOut?: string; nights?: number; guestCount?: number };
+  priceBreakdown?: {
+    pricePerNightPaise?: number;
+    nightlySubtotalPaise?: number;
+    cleaningFeePaise?: number;
+    totalAmountPaise?: number;
+    currency?: string;
+  };
+}
+
+function normalizeBooking(raw: BookingApiRecord): SerializedBookingResponse {
+  const property = raw.property;
+  const stay = raw.stay;
+  const prices = raw.priceBreakdown;
+  const pricePerNightPaise = raw.pricePerNightPaise ?? prices?.pricePerNightPaise ?? 0;
+  const nightlySubtotalPaise = raw.nightlySubtotalPaise ?? prices?.nightlySubtotalPaise ?? 0;
+  const cleaningFeePaise = raw.cleaningFeePaise ?? prices?.cleaningFeePaise ?? 0;
+  const totalAmountPaise = raw.totalAmountPaise ?? prices?.totalAmountPaise ?? 0;
+  const currency = raw.currency ?? prices?.currency ?? 'INR';
+  const bookingReference = raw.bookingReference ?? '';
+  const createdAt = raw.createdAt ?? '';
+
+  return {
+    ...raw,
+    id: raw.id ?? bookingReference,
+    userId: raw.userId ?? '',
+    propertyId: raw.propertyId ?? '',
+    bookingReference,
+    propertyTitleSnapshot: raw.propertyTitleSnapshot ?? property?.title ?? '',
+    propertySlugSnapshot: raw.propertySlugSnapshot ?? property?.slug ?? '',
+    propertyCitySnapshot: raw.propertyCitySnapshot ?? property?.city ?? '',
+    propertyCoverImageSnapshot: raw.propertyCoverImageSnapshot ?? property?.coverImage ?? null,
+    checkIn: raw.checkIn ?? stay?.checkIn ?? '',
+    checkOut: raw.checkOut ?? stay?.checkOut ?? '',
+    nights: raw.nights ?? stay?.nights ?? 0,
+    guestCount: raw.guestCount ?? stay?.guestCount ?? 1,
+    pricePerNightPaise,
+    pricePerNightFormatted: raw.pricePerNightFormatted ?? formatINR(pricePerNightPaise / 100),
+    nightlySubtotalPaise,
+    nightlySubtotalFormatted: raw.nightlySubtotalFormatted ?? formatINR(nightlySubtotalPaise / 100),
+    cleaningFeePaise,
+    cleaningFeeFormatted: raw.cleaningFeeFormatted ?? formatINR(cleaningFeePaise / 100),
+    totalAmountPaise,
+    totalAmountFormatted: raw.totalAmountFormatted ?? formatINR(totalAmountPaise / 100),
+    currency,
+    status: raw.status ?? 'HOLD',
+    holdExpiresAt: raw.holdExpiresAt ?? null,
+    confirmedAt: raw.confirmedAt ?? null,
+    completedAt: raw.completedAt ?? null,
+    cancelledAt: raw.cancelledAt ?? null,
+    expiredAt: raw.expiredAt ?? null,
+    createdAt,
+    updatedAt: raw.updatedAt ?? createdAt,
+  };
+}
+
+function normalizeBookingResponse<T>(
+  response: ApiResponse<T>,
+): ApiResponse<SerializedBookingResponse> {
+  return {
+    ...response,
+    data: response.data ? normalizeBooking(response.data as BookingApiRecord) : null,
+  };
 }
 
 /**
@@ -438,7 +506,8 @@ export const publicPropertiesApi = {
     if (query?.q) params.set('q', query.q);
     if (query?.destination) params.set('destination', query.destination);
     if (query?.propertyTypes && query.propertyTypes.length > 0) {
-      query.propertyTypes.forEach((pt) => params.append('propertyTypes', pt));
+      // The API accepts a single comma-separated string for this filter.
+      params.set('propertyTypes', query.propertyTypes.join(','));
     }
     if (query?.minPricePaise !== undefined) {
       params.set('minPricePaise', query.minPricePaise.toString());
@@ -456,7 +525,7 @@ export const publicPropertiesApi = {
       params.set('bathrooms', query.bathrooms.toString());
     }
     if (query?.amenities && query.amenities.length > 0) {
-      query.amenities.forEach((a) => params.append('amenities', a));
+      params.set('amenities', query.amenities.join(','));
     }
     if (query?.city) params.set('city', query.city);
     if (query?.state) params.set('state', query.state);
@@ -599,30 +668,33 @@ export const bookingsApi = {
   createHold: async (
     input: CreateBookingHoldInput,
   ): Promise<ApiResponse<SerializedBookingResponse>> => {
-    return apiFetch<SerializedBookingResponse>('/bookings/holds', {
+    const response = await apiFetch<SerializedBookingResponse>('/bookings/holds', {
       method: 'POST',
       body: JSON.stringify(input),
     });
+    return normalizeBookingResponse(response);
   },
 
   /**
    * Get single booking details by booking reference (STY-XXXXXXXX).
    */
   getDetail: async (bookingReference: string): Promise<ApiResponse<SerializedBookingResponse>> => {
-    return apiFetch<SerializedBookingResponse>(
+    const response = await apiFetch<SerializedBookingResponse>(
       `/bookings/${encodeURIComponent(bookingReference)}`,
       { method: 'GET' },
     );
+    return normalizeBookingResponse(response);
   },
 
   /**
    * Cancel an active temporary booking hold.
    */
   cancelHold: async (bookingReference: string): Promise<ApiResponse<SerializedBookingResponse>> => {
-    return apiFetch<SerializedBookingResponse>(
+    const response = await apiFetch<SerializedBookingResponse>(
       `/bookings/${encodeURIComponent(bookingReference)}/hold`,
       { method: 'DELETE' },
     );
+    return normalizeBookingResponse(response);
   },
 
   /**
@@ -634,9 +706,15 @@ export const bookingsApi = {
     if (query?.limit) params.set('limit', query.limit.toString());
     if (query?.status) params.set('status', query.status);
     const qs = params.toString();
-    return apiFetch<PaginatedBookings>(`/bookings/me${qs ? `?${qs}` : ''}`, {
+    const response = await apiFetch<PaginatedBookings>(`/bookings/me${qs ? `?${qs}` : ''}`, {
       method: 'GET',
     });
+    return {
+      ...response,
+      data: response.data
+        ? { ...response.data, items: response.data.items.map(normalizeBooking) }
+        : null,
+    };
   },
 };
 
@@ -920,8 +998,30 @@ export const adminApi = {
     return apiFetch<AdminDashboardOverview>('/admin/dashboard/overview');
   },
   getTimeseries: async (metric: string, period = '30d'): Promise<ApiResponse<AdminTimeseriesData>> => {
-    const query = new URLSearchParams({ metric, period });
-    return apiFetch<AdminTimeseriesData>(`/admin/dashboard/timeseries?${query.toString()}`);
+    const response = await apiFetch<{
+      period: string;
+      timeSeries: Array<{
+        date: string;
+        users: number;
+        bookings: number;
+        volumePaise: number;
+      }>;
+    }>(`/admin/dashboard/analytics?${new URLSearchParams({ period }).toString()}`);
+
+    return {
+      ...response,
+      data: response.data
+        ? {
+            metric,
+            period: response.data.period,
+            points: response.data.timeSeries.map((point) => ({
+              date: point.date,
+              count: metric === 'bookings' ? point.bookings : metric === 'users' ? point.users : 0,
+              ...(metric === 'revenue' ? { value: point.volumePaise } : {}),
+            })),
+          }
+        : null,
+    };
   },
 
   // Users Management
@@ -1126,7 +1226,7 @@ export const adminApi = {
         if (v !== undefined && v !== null && v !== '') query.set(k, String(v));
       });
     }
-    return apiFetch<AdminAiUsageStats>(`/admin/ai-usage/stats?${query.toString()}`);
+    return apiFetch<AdminAiUsageStats>(`/admin/ai/usage?${query.toString()}`);
   },
 
   // Audit Logs
@@ -1139,6 +1239,28 @@ export const adminApi = {
         if (v !== undefined && v !== null && v !== '') query.set(k, String(v));
       });
     }
-    return apiFetch<{ data: AdminAuditLogItem[]; meta: AdminPaginationMeta }>(`/admin/audit-logs?${query.toString()}`);
+    const response = await apiFetch<{
+      data: Array<
+        Omit<AdminAuditLogItem, 'adminUserId' | 'adminUserEmail' | 'adminUserName'> & {
+          admin?: { id?: string; name?: string; email?: string };
+        }
+      >;
+      meta: AdminPaginationMeta;
+    }>(`/admin/audit-logs?${query.toString()}`);
+
+    return {
+      ...response,
+      data: response.data
+        ? {
+            ...response.data,
+            data: response.data.data.map((entry) => ({
+              ...entry,
+              adminUserId: entry.admin?.id ?? '',
+              adminUserEmail: entry.admin?.email ?? '',
+              adminUserName: entry.admin?.name ?? '',
+            })),
+          }
+        : null,
+    };
   },
 };

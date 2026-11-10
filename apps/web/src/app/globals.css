@@ -1,26 +1,78 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --bg-primary: #faf9f6;
-  --bg-secondary: #f2f0ea;
-  --bg-muted: #f0eee8;
-  --text-primary: #242722;
-  --text-secondary: #74766f;
-  --text-tertiary: #5a5c55;
-  --text-disabled: #9e9b93;
-  --text-disabled-soft: #b6b4af;
-  --accent-primary: #637c69;
-  --accent-primary-hover: #536a59;
-  --accent-secondary: #b66e53;
-  --accent-secondary-hover: #a05d44;
-  --accent-primary-hover-strong: #526656;
-  --accent-secondary-hover-strong: #a05c43;
-  --surface-deep: #2f342d;
-  --surface-deeper: #1e211d;
-  --surface-deep-hover: #383d35;
-  --border: #e8e5de;
-  --border-subtle: #f0ede6;
+  color-scheme: light;
+  --bg-primary: #f5f7f4;
+  --bg-secondary: #e9eee9;
+  --bg-muted: #e1e8e2;
+  --text-primary: #182622;
+  --text-secondary: #687670;
+  --text-tertiary: #4d5b55;
+  --text-disabled: #94a09a;
+  --text-disabled-soft: #b5beb8;
+  --accent-primary: #1c594b;
+  --accent-primary-hover: #164639;
+  --accent-secondary: #d17a51;
+  --accent-secondary-hover: #b9643e;
+  --accent-primary-hover-strong: #164639;
+  --accent-secondary-hover-strong: #b9643e;
+  --surface-deep: #193a33;
+  --surface-deeper: #112822;
+  --surface-deep-hover: #244940;
+  --border: #dce4dd;
+  --border-subtle: #e8ede8;
   --card-bg: #ffffff;
+  --ring: #236a59;
+  --radius-card: 1.25rem;
+  --foreground: #182622;
+  --muted-foreground: #687670;
+  --popover: #ffffff;
+  --popover-foreground: #182622;
+  --chart-1: #1c594b;
+  --chart-2: #d17a51;
+  --chart-3: #bd9b48;
+  --chart-4: #577d85;
+  --chart-5: #83958c;
+  --chart-positive: oklch(0.696 0.17 162.48);
+  --chart-negative: oklch(0.637 0.237 25.331);
+  --chart-background: oklch(1 0 0);
+  --chart-foreground: oklch(0.145 0.004 285);
+  --chart-foreground-muted: oklch(0.55 0.014 260);
+  --chart-line-primary: var(--chart-1);
+  --chart-line-secondary: var(--chart-2);
+  --chart-crosshair: oklch(0.4 0.1828 274.34);
+  --chart-grid: oklch(0.9 0 0);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: var(--popover);
+  --chart-tooltip-foreground: var(--popover-foreground);
+  --chart-tooltip-muted: var(--muted-foreground);
+  --chart-marker-background: oklch(0.97 0.005 260);
+  --chart-marker-border: oklch(0.85 0.01 260);
+  --chart-marker-foreground: oklch(0.3 0.01 260);
+  --chart-label: oklch(0.45 0.01 260);
+  --chart-scale-mix: oklch(1 0 0);
+  --chart-scale-01: oklch(0.922 0 0);
+  --chart-scale-02: color-mix(in oklab, var(--chart-1) 35%, var(--chart-scale-mix));
+  --chart-scale-03: color-mix(in oklab, var(--chart-1) 55%, var(--chart-scale-mix));
+  --chart-scale-04: color-mix(in oklab, var(--chart-1) 78%, var(--chart-scale-mix));
+  --chart-scale-05: var(--chart-1);
+  --chart-scale-pattern-color: oklch(1 0 0);
+  --chart-indicator-color: oklch(0.21 0.006 285);
+  --chart-indicator-secondary-color: oklch(0.913 0 0);
+  --chart-marker-badge-background: oklch(0 0 0);
+  --chart-marker-badge-foreground: oklch(0.84 0 0);
+  --chart-segment-background: oklch(0.756 0 0 / 0.06);
+  --chart-segment-line: oklch(0.5 0 0 / 0.25);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: auto;
 }
 
 body {
@@ -29,16 +81,116 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   font-family:
-    var(--font-dm-sans),
+    var(--font-instrument-sans),
     system-ui,
     -apple-system,
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-.font-serif {
-  font-family: var(--font-dm-serif), Georgia, Cambria, serif;
+.font-serif,
+.font-display {
+  font-family: var(--font-archivo), var(--font-instrument-sans), sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+
+.home-display {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.055em;
+}
+
+::selection {
+  background: #c5ddd1;
+  color: #14251f;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ring) 60%, white);
+  outline-offset: 2px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+button {
+  transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Scroll reveals are activated only when the IntersectionObserver is mounted. */
+.scroll-reveal {
+  transition:
+    opacity 850ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+.scroll-reveal-ready .scroll-reveal[data-revealed='false'] {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+}
+
+.hero-copy-in,
+.hero-media-in {
+  animation: hero-arrive 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-copy-in {
+  animation-delay: 100ms;
+}
+
+.hero-media-in {
+  animation-delay: 200ms;
+}
+
+.hero-title-rule {
+  transform: scaleX(0);
+  animation: draw-rule 1000ms 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-parallax-media {
+  transform: translate3d(0, 0, 0) scale(1.04);
+  transform-origin: center center;
+}
+
+@keyframes hero-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes draw-rule {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .hero-parallax-media {
+    animation: hero-parallax linear both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 100%;
+  }
+
+  @keyframes hero-parallax {
+    to {
+      transform: translate3d(0, 52px, 0) scale(1.1);
+    }
+  }
 }
 
 /* Custom scrollbar for horizontal categories */
@@ -48,4 +200,115 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .scroll-reveal-ready .scroll-reveal[data-revealed='false'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .hero-copy-in,
+  .hero-media-in,
+  .hero-title-rule,
+  .hero-parallax-media {
+    animation: none !important;
+  }
+
+  .hero-title-rule {
+    transform: scaleX(1);
+  }
+
+  .hero-parallax-media {
+    transform: scale(1.04);
+  }
+}
+
+@theme inline {
+  --color-chart-line-primary: var(--chart-line-primary);
+  --color-chart-line-secondary: var(--chart-line-secondary);
+  --color-chart-brush-border: var(--chart-brush-border);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-03: var(--chart-scale-03);
+  --color-chart-scale-04: var(--chart-scale-04);
+  --color-chart-scale-05: var(--chart-scale-05);
+  --color-chart-segment-line: var(--chart-segment-line);
+  --color-chart-segment-background: var(--chart-segment-background);
+  --color-chart-marker-badge-foreground: var(--chart-marker-badge-foreground);
+  --color-chart-marker-badge-background: var(--chart-marker-badge-background);
+  --color-chart-indicator-secondary-color: var(--chart-indicator-secondary-color);
+  --color-chart-indicator-color: var(--chart-indicator-color);
+  --color-chart-scale-pattern-color: var(--chart-scale-pattern-color);
+  --chart-scale-05: var(--chart-scale-05);
+  --chart-scale-04: var(--chart-scale-04);
+  --chart-scale-03: var(--chart-scale-03);
+  --chart-scale-02: var(--chart-scale-02);
+  --color-chart-scale-01: var(--chart-scale-01);
+  --color-chart-scale-mix: var(--chart-scale-mix);
+  --color-chart-label: var(--chart-label);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --chart-tooltip-muted: var(--chart-tooltip-muted);
+  --chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --chart-tooltip-background: var(--chart-tooltip-background);
+  --chart-brush-border: var(--chart-brush-border);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --chart-line-secondary: var(--chart-line-secondary);
+  --chart-line-primary: var(--chart-line-primary);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-background: var(--chart-background);
+  --color-chart-negative: var(--chart-negative);
+  --color-chart-positive: var(--chart-positive);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+}
+
+.dark {
+  --chart-1: oklch(0.585 0.233 277.117);
+  --chart-2: oklch(0.852 0.199 91.936);
+  --chart-3: oklch(0.459 0.156 302.679);
+  --chart-4: oklch(0.56 0.021 213.5);
+  --chart-5: oklch(1 0 0);
+  --chart-positive: oklch(0.765 0.177 163.223);
+  --chart-negative: oklch(0.704 0.191 22.216);
+  --chart-background: oklch(0.145 0 0);
+  --chart-foreground: oklch(0.45 0 0);
+  --chart-foreground-muted: oklch(0.65 0.01 260);
+  --chart-crosshair: oklch(0.45 0 0);
+  --chart-grid: oklch(0.25 0 0);
+  --chart-brush-border: var(--chart-grid);
+  --chart-marker-background: oklch(0.25 0.01 260);
+  --chart-marker-border: oklch(0.4 0.01 260);
+  --chart-marker-foreground: oklch(0.9 0 0);
+  --chart-label: oklch(0.75 0.01 260);
+  --chart-scale-mix: oklch(0.25 0 0);
+  --chart-scale-01: oklch(0.3 0 0);
+  --chart-scale-02: color-mix(in oklab, var(--chart-1) 35%, var(--chart-scale-mix));
+  --chart-scale-03: color-mix(in oklab, var(--chart-1) 55%, var(--chart-scale-mix));
+  --chart-scale-04: color-mix(in oklab, var(--chart-1) 78%, var(--chart-scale-mix));
+  --chart-scale-05: var(--chart-1);
+  --chart-scale-pattern-color: oklch(0.145 0 0);
+  --chart-indicator-color: oklch(1 0 0);
+  --chart-indicator-secondary-color: oklch(0.145 0 0);
+  --chart-marker-badge-background: oklch(1 0 0);
+  --chart-marker-badge-foreground: oklch(0.15 0 0);
+  --chart-segment-background: oklch(0.41 0.0127 248.14 / 0.25);
+  --chart-segment-line: oklch(1 0 0 / 0.25);
 }

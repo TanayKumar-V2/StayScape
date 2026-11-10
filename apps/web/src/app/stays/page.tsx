@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
+  ChevronDown,
 } from 'lucide-react';
 import { publicPropertiesApi } from '@/lib/api';
 import { PublicPropertySummary, PublicSearchMeta, SearchPropertiesQuery } from '@/types/property';
@@ -42,7 +43,20 @@ function StaysContent() {
   // Read initial parameters from URL
   const initialDestination = searchParams.get('destination') || '';
   const initialCategory = searchParams.get('category') || 'All';
-  const initialPropertyType = searchParams.get('propertyType') || 'All';
+  const requestedPropertyType = searchParams.get('propertyType') || 'All';
+  const supportedPropertyTypes = [
+    'APARTMENT',
+    'CABIN',
+    'GUESTHOUSE',
+    'HOTEL',
+    'HOUSE',
+    'HOMESTAY',
+    'OTHER',
+    'VILLA',
+  ];
+  const initialPropertyType = supportedPropertyTypes.includes(requestedPropertyType.toUpperCase())
+    ? requestedPropertyType.toUpperCase()
+    : 'All';
   const initialMinPrice = Number(searchParams.get('minPrice')) || 2000;
   const initialMaxPrice = Number(searchParams.get('maxPrice')) || 60000;
   const initialGuests = Number(searchParams.get('guests')) || 1;
@@ -52,6 +66,8 @@ function StaysContent() {
   const initialSort =
     (searchParams.get('sort') as 'recommended' | 'price-asc' | 'price-desc') || 'recommended';
   const initialPage = Number(searchParams.get('page')) || 1;
+  const initialCheckIn = searchParams.get('checkIn') || '';
+  const initialCheckOut = searchParams.get('checkOut') || '';
 
   // Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -71,6 +87,9 @@ function StaysContent() {
   const [showMap, setShowMap] = useState<boolean>(false);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [selectedMapSlug, setSelectedMapSlug] = useState<string | null>(null);
+  const [checkIn, setCheckIn] = useState(initialCheckIn);
+  const [checkOut, setCheckOut] = useState(initialCheckOut);
+  const [browseOptionsOpen, setBrowseOptionsOpen] = useState(false);
 
   // Search input in header
   const [searchInput, setSearchInput] = useState(initialDestination);
@@ -107,11 +126,13 @@ function StaysContent() {
     }
 
     if (filters.category && filters.category !== 'All') {
-      if (filters.category === 'Cabins') query.propertyTypes = ['CABIN', 'CHALET'];
+      if (filters.category === 'Cabins') query.propertyTypes = ['CABIN'];
       else if (filters.category === 'Beachfront') query.q = 'beach';
       else if (filters.category === 'Mountains') query.q = 'mountain';
-      else if (filters.category === 'Luxury stays') query.propertyTypes = ['VILLA', 'RESORT'];
-      else if (filters.category === 'Countryside') query.propertyTypes = ['FARM_STAY', 'COTTAGE'];
+      else if (filters.category === 'Amazing views') query.q = 'amazing view';
+      else if (filters.category === 'Design stays') query.q = 'design';
+      else if (filters.category === 'Luxury stays') query.propertyTypes = ['VILLA', 'HOTEL'];
+      else if (filters.category === 'Countryside') query.propertyTypes = ['HOUSE', 'HOMESTAY'];
       else if (filters.category === 'City escapes') query.propertyTypes = ['APARTMENT', 'HOUSE'];
     }
 
@@ -170,7 +191,7 @@ function StaysContent() {
 
   // Synchronize URL with active filters
   const syncUrl = useCallback(
-    (newFilters: FilterState, newSort: string, newPage: number) => {
+    (newFilters: FilterState, newSort: string, newPage: number, dates = { checkIn, checkOut }) => {
       const params = new URLSearchParams();
       if (newFilters.destination) params.set('destination', newFilters.destination);
       if (newFilters.category && newFilters.category !== 'All')
@@ -184,11 +205,13 @@ function StaysContent() {
       newFilters.amenities.forEach((a) => params.append('amenities', a));
       if (newSort !== 'recommended') params.set('sort', newSort);
       if (newPage > 1) params.set('page', newPage.toString());
+      if (dates.checkIn) params.set('checkIn', dates.checkIn);
+      if (dates.checkOut) params.set('checkOut', dates.checkOut);
 
       const qs = params.toString();
       router.replace(`/stays${qs ? `?${qs}` : ''}`, { scroll: false });
     },
-    [router],
+    [router, checkIn, checkOut],
   );
 
   const handleFilterChange = (newFilters: FilterState) => {
@@ -219,9 +242,11 @@ function StaysContent() {
     };
     setFilters(resetState);
     setSearchInput('');
+    setCheckIn('');
+    setCheckOut('');
     setSortBy('recommended');
     setPage(1);
-    syncUrl(resetState, 'recommended', 1);
+    syncUrl(resetState, 'recommended', 1, { checkIn: '', checkOut: '' });
   };
 
   return (
@@ -294,7 +319,7 @@ function StaysContent() {
           />
         </div>
 
-        {/* Filter Summary, Map Toggle & Sorting Controls */}
+        {/* Primary filter summary and secondary discovery controls */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[var(--bg-secondary)]/70 p-3.5 rounded-2xl border border-[var(--border)]">
           <div className="flex items-center gap-2">
             {/* Mobile Filter Toggle */}
@@ -326,34 +351,69 @@ function StaysContent() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 ml-auto">
-            {/* Map View Toggle Button */}
+          <button
+            type="button"
+            aria-expanded={browseOptionsOpen}
+            aria-controls="browse-options"
+            onClick={() => setBrowseOptionsOpen((open) => !open)}
+            className="ml-auto inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white text-xs font-semibold text-[var(--text-primary)] border border-[var(--border)] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+          >
+            More options{' '}
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${browseOptionsOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+        </div>
+
+        {browseOptionsOpen && (
+          <div
+            id="browse-options"
+            className="-mt-6 mb-8 flex flex-wrap items-end gap-4 p-4 rounded-2xl border border-[var(--border)] bg-white"
+          >
+            <label className="text-xs font-medium text-[var(--text-secondary)]">
+              Check-in
+              <input
+                type="date"
+                value={checkIn}
+                onChange={(e) => {
+                  setCheckIn(e.target.value);
+                  syncUrl(filters, sortBy, 1, { checkIn: e.target.value, checkOut });
+                }}
+                className="mt-1 block rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-primary)]"
+              />
+            </label>
+            <label className="text-xs font-medium text-[var(--text-secondary)]">
+              Check-out
+              <input
+                type="date"
+                min={checkIn || undefined}
+                value={checkOut}
+                onChange={(e) => {
+                  setCheckOut(e.target.value);
+                  syncUrl(filters, sortBy, 1, { checkIn, checkOut: e.target.value });
+                }}
+                className="mt-1 block rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-primary)]"
+              />
+            </label>
+            {(checkIn || checkOut) && (
+              <p className="max-w-xs text-xs text-[var(--text-secondary)]">
+                We’ll carry these dates to each stay. Availability is checked before reservation.
+              </p>
+            )}
             <button
               type="button"
-              onClick={() => setShowMap(!showMap)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-                showMap
-                  ? 'bg-[var(--text-primary)] text-white border-[var(--text-primary)]'
-                  : 'bg-white text-[var(--text-primary)] border-[var(--border)] hover:bg-[var(--bg-primary)]'
-              }`}
+              onClick={() => setShowMap((visible) => !visible)}
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)]"
             >
-              {showMap ? (
-                <Grid className="w-3.5 h-3.5" />
-              ) : (
-                <Map className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-              )}
-              <span>{showMap ? 'Show Grid Only' : 'Show Map'}</span>
+              {showMap ? <Grid className="w-4 h-4" /> : <Map className="w-4 h-4" />}
+              {showMap ? 'Show grid only' : 'Show map'}
             </button>
-
-            {/* Sorting Dropdown */}
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-              <label
-                htmlFor="sort-select"
-                className="text-xs text-[var(--text-secondary)] font-medium hidden sm:inline"
-              >
-                Sort:
-              </label>
+            <label
+              htmlFor="sort-select"
+              className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              Sort
               <select
                 id="sort-select"
                 value={sortBy}
@@ -363,15 +423,15 @@ function StaysContent() {
                   setPage(1);
                   syncUrl(filters, val, 1);
                 }}
-                className="bg-white border border-[var(--border)] rounded-xl px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] focus:outline-none cursor-pointer"
+                className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-xs font-medium text-[var(--text-primary)]"
               >
-                <option value="recommended">Newest Stays</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
+                <option value="recommended">Newest stays</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
               </select>
-            </div>
+            </label>
           </div>
-        </div>
+        )}
 
         {/* Main Content Layout with Sidebar & Optional Map */}
         <div className="flex items-start gap-8">
@@ -448,7 +508,11 @@ function StaysContent() {
                   } gap-6`}
                 >
                   {properties.map((property) => (
-                    <PropertyCard key={property.id} property={property} />
+                    <PropertyCard
+                      key={property.id}
+                      property={property}
+                      searchDates={{ checkIn, checkOut, guests: filters.guests }}
+                    />
                   ))}
                 </div>
 

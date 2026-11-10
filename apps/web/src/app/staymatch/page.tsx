@@ -394,7 +394,9 @@ function StayMatchContent() {
               {data.results.map((property) => {
                 const priceRupees = Math.round(property.pricePerNightPaise / 100);
                 const isSelectedForCompare = compareSlugs.includes(property.slug);
-                const coverUrl = property.coverImage?.url;
+                const coverImage =
+                  property.images?.find((image) => image.isCover) ?? property.images?.[0];
+                const coverUrl = coverImage?.secureUrl ?? property.coverImage?.url;
 
                 return (
                   <div
@@ -406,7 +408,7 @@ function StayMatchContent() {
                       {coverUrl ? (
                         <Image
                           src={coverUrl}
-                          alt={property.title}
+                          alt={coverImage?.altText || property.title}
                           fill
                           sizes="(max-width: 768px) 100vw, 33vw"
                           className="object-cover group-hover:scale-105 transition-transform duration-500"

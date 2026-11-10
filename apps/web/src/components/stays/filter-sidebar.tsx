@@ -31,11 +31,9 @@ const PROPERTY_TYPES = [
   { value: 'VILLA', label: 'Villa' },
   { value: 'CABIN', label: 'Cabin' },
   { value: 'APARTMENT', label: 'Apartment' },
-  { value: 'COTTAGE', label: 'Cottage' },
   { value: 'HOUSE', label: 'House' },
-  { value: 'CHALET', label: 'Chalet' },
-  { value: 'FARM_STAY', label: 'Farm Stay' },
-  { value: 'RESORT', label: 'Resort' },
+  { value: 'HOTEL', label: 'Hotel' },
+  { value: 'GUESTHOUSE', label: 'Guesthouse' },
   { value: 'HOMESTAY', label: 'Homestay' },
 ];
 

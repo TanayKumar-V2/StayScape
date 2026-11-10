@@ -137,12 +137,24 @@ export class PublicPropertiesService {
         .filter(Boolean);
 
       const validEnums = Object.values(PropertyType);
+      const legacyAliases: Record<string, PropertyType[]> = {
+        CHALET: [PropertyType.CABIN],
+        COTTAGE: [PropertyType.HOUSE],
+        FARM_STAY: [PropertyType.HOUSE, PropertyType.HOMESTAY],
+        RESORT: [PropertyType.HOTEL],
+      };
+      parsedTypes = [];
       for (const t of splitTypes) {
-        if (!validEnums.includes(t as PropertyType)) {
+        const aliases = legacyAliases[t];
+        if (aliases) {
+          parsedTypes.push(...aliases);
+        } else if (validEnums.includes(t as PropertyType)) {
+          parsedTypes.push(t as PropertyType);
+        } else {
           throw new BadRequestException(`Invalid propertyType: ${t}`);
         }
       }
-      parsedTypes = splitTypes as PropertyType[];
+      parsedTypes = [...new Set(parsedTypes)];
     }
 
     // Parse amenities

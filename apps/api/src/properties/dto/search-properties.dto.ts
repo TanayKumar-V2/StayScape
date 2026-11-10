@@ -27,7 +27,13 @@ export class SearchPropertiesDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string').join(',').trim()
+      : typeof value === 'string'
+        ? value.trim()
+        : value,
+  )
   propertyTypes?: string;
 
   @ApiPropertyOptional({

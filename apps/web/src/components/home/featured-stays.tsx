@@ -7,6 +7,7 @@ import { publicPropertiesApi } from '@/lib/api';
 import { PublicPropertySummary, SearchPropertiesQuery } from '@/types/property';
 import { PropertyCard } from '@/components/stays/property-card';
 import { CategoryBar } from './category-bar';
+import { ScrollReveal } from './scroll-reveal';
 
 export function FeaturedStays() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -25,15 +26,15 @@ export function FeaturedStays() {
     };
 
     if (category === 'Cabins') {
-      query.propertyTypes = ['CABIN', 'CHALET'];
+      query.propertyTypes = ['CABIN'];
     } else if (category === 'Beachfront') {
       query.q = 'beach';
     } else if (category === 'Mountains') {
       query.q = 'mountain';
     } else if (category === 'Luxury stays') {
-      query.propertyTypes = ['VILLA', 'RESORT'];
+      query.propertyTypes = ['VILLA', 'HOTEL'];
     } else if (category === 'Countryside') {
-      query.propertyTypes = ['FARM_STAY', 'COTTAGE'];
+      query.propertyTypes = ['HOUSE', 'HOMESTAY'];
     } else if (category === 'City escapes') {
       query.propertyTypes = ['APARTMENT', 'HOUSE'];
     }
@@ -60,29 +61,34 @@ export function FeaturedStays() {
   }, [selectedCategory, fetchFeatured]);
 
   return (
-    <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="featured-stays" className="mx-auto max-w-[1320px] px-4 py-24 sm:px-6 lg:py-32">
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+      <ScrollReveal className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end lg:mb-14">
         <div>
-          <span className="text-xs uppercase tracking-widest font-bold text-[var(--accent-primary)] mb-1 block">
-            Handpicked Escapes
+          <span className="mb-4 block text-[10px] font-semibold uppercase tracking-[.22em] text-[#9a684b]">
+            01 — The collection
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight">
-            Featured stays across India
+          <h2 className="home-display max-w-[15ch] text-4xl leading-[.98] text-[#23342b] sm:text-5xl lg:text-6xl">
+            A place with its own point of view.
           </h2>
         </div>
+        <p className="max-w-[310px] pb-1 text-sm leading-7 text-[#697268]">
+          Character-rich stays chosen for where they are, how they feel, and who welcomes you.
+        </p>
 
         <Link
           href="/stays"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] group"
+          className="group inline-flex shrink-0 items-center gap-3 text-[13px] font-medium text-[#2c4a3a]"
         >
-          <span>Explore all {totalCount > 0 ? totalCount : ''} listings</span>
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          <span>Explore {totalCount > 0 ? totalCount : 'all'} stays</span>
+          <span className="flex size-9 items-center justify-center rounded-full border border-[#d1d3c8] transition-transform duration-500 ease-[cubic-bezier(.32,.72,0,1)] group-hover:translate-x-1 group-hover:border-[#9a684b]">
+            <ArrowRight className="h-4 w-4" strokeWidth={1.35} />
+          </span>
         </Link>
-      </div>
+      </ScrollReveal>
 
       {/* Category Tabs */}
-      <div className="mb-8 -mx-4 sm:-mx-6 lg:-mx-8">
+      <div className="mb-10 -mx-4 sm:-mx-6 lg:-mx-8 lg:mb-12">
         <CategoryBar
           selectedCategory={selectedCategory}
           onSelectCategory={(cat) => setSelectedCategory(cat)}
@@ -91,7 +97,7 @@ export function FeaturedStays() {
 
       {/* Property Cards Grid / Skeleton / Empty State */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
+        <div className="grid grid-cols-1 gap-x-7 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-14">
           {Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
@@ -120,9 +126,11 @@ export function FeaturedStays() {
           </button>
         </div>
       ) : (properties?.length ?? 0) > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
+        <div className="grid grid-cols-1 gap-x-7 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8 lg:gap-y-14">
           {properties.map((property, idx) => (
-            <PropertyCard key={property.id} property={property} priority={idx < 4} />
+            <ScrollReveal key={property.id} delay={(idx % 3) * 0.07}>
+              <PropertyCard property={property} priority={idx < 3} />
+            </ScrollReveal>
           ))}
         </div>
       ) : (

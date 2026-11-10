@@ -400,6 +400,153 @@ export const INITIAL_PROPERTIES = [
   },
 ];
 
+type SeedPropertyData = Omit<(typeof INITIAL_PROPERTIES)[number], 'propertyType'> & {
+  propertyType: PropertyType;
+};
+
+const MOCK_DESTINATIONS = [
+  { city: 'Shimla', state: 'Himachal Pradesh', postalCode: '171001', latitude: 31.1048, longitude: 77.1734 },
+  { city: 'Dharamshala', state: 'Himachal Pradesh', postalCode: '176215', latitude: 32.219, longitude: 76.3234 },
+  { city: 'Kasol', state: 'Himachal Pradesh', postalCode: '175105', latitude: 32.0104, longitude: 77.3152 },
+  { city: 'Bir', state: 'Himachal Pradesh', postalCode: '176077', latitude: 32.0472, longitude: 76.7179 },
+  { city: 'Srinagar', state: 'Jammu and Kashmir', postalCode: '190001', latitude: 34.0837, longitude: 74.7973 },
+  { city: 'Mussoorie', state: 'Uttarakhand', postalCode: '248179', latitude: 30.4599, longitude: 78.0664 },
+  { city: 'Nainital', state: 'Uttarakhand', postalCode: '263001', latitude: 29.3919, longitude: 79.4542 },
+  { city: 'Jaipur', state: 'Rajasthan', postalCode: '302001', latitude: 26.9124, longitude: 75.7873 },
+  { city: 'Jodhpur', state: 'Rajasthan', postalCode: '342001', latitude: 26.2389, longitude: 73.0243 },
+  { city: 'Pushkar', state: 'Rajasthan', postalCode: '305022', latitude: 26.4899, longitude: 74.5511 },
+  { city: 'Jaisalmer', state: 'Rajasthan', postalCode: '345001', latitude: 26.9157, longitude: 70.9083 },
+  { city: 'Agra', state: 'Uttar Pradesh', postalCode: '282001', latitude: 27.1767, longitude: 78.0081 },
+  { city: 'Varanasi', state: 'Uttar Pradesh', postalCode: '221001', latitude: 25.3176, longitude: 82.9739 },
+  { city: 'Kolkata', state: 'West Bengal', postalCode: '700001', latitude: 22.5726, longitude: 88.3639 },
+  { city: 'Gangtok', state: 'Sikkim', postalCode: '737101', latitude: 27.3389, longitude: 88.6065 },
+  { city: 'Shillong', state: 'Meghalaya', postalCode: '793001', latitude: 25.5788, longitude: 91.8933 },
+  { city: 'Pune', state: 'Maharashtra', postalCode: '411001', latitude: 18.5204, longitude: 73.8567 },
+  { city: 'Alibaug', state: 'Maharashtra', postalCode: '402201', latitude: 18.6414, longitude: 72.8722 },
+  { city: 'Gokarna', state: 'Karnataka', postalCode: '581326', latitude: 14.5479, longitude: 74.3188 },
+  { city: 'Coorg', state: 'Karnataka', postalCode: '571201', latitude: 12.3375, longitude: 75.8069 },
+  { city: 'Kochi', state: 'Kerala', postalCode: '682001', latitude: 9.9312, longitude: 76.2673 },
+  { city: 'Varkala', state: 'Kerala', postalCode: '695141', latitude: 8.7379, longitude: 76.7163 },
+  { city: 'Pondicherry', state: 'Puducherry', postalCode: '605001', latitude: 11.9416, longitude: 79.8083 },
+  { city: 'Hampi', state: 'Karnataka', postalCode: '583239', latitude: 15.335, longitude: 76.46 },
+];
+
+const MOCK_STAY_STYLES = [
+  {
+    slug: 'slow-house',
+    title: 'The Slow House',
+    type: PropertyType.VILLA,
+    description: 'A quietly considered private home with tactile natural materials, generous windows, and a calm place to reset between days out.',
+  },
+  {
+    slug: 'canopy-retreat',
+    title: 'Canopy Retreat',
+    type: PropertyType.CABIN,
+    description: 'A warm, independent hideaway tucked into its landscape, with a private outdoor sitting area and thoughtful essentials for a longer stay.',
+  },
+  {
+    slug: 'courtyard-stay',
+    title: 'The Courtyard Stay',
+    type: PropertyType.HOMESTAY,
+    description: 'A welcoming locally hosted stay with a shared sense of place, restful rooms, and easy access to neighborhood cafés and landmarks.',
+  },
+  {
+    slug: 'light-house',
+    title: 'The Light House',
+    type: PropertyType.APARTMENT,
+    description: 'A bright, well-planned apartment with a practical kitchen, comfortable lounge, and a neighborhood feel from the moment you arrive.',
+  },
+  {
+    slug: 'sunday-house',
+    title: 'Sunday House',
+    type: PropertyType.GUESTHOUSE,
+    description: 'An intimate guesthouse made for unhurried mornings, with considered furnishings, a peaceful atmosphere, and a friendly local host.',
+  },
+];
+
+// Curated, high-resolution Unsplash accommodation photography. Images are served
+// through Unsplash's image CDN at consistent dimensions and quality.
+const MOCK_STAY_IMAGE_IDS = [
+  'photo-1600585154340-be6161a56a0c',
+  'photo-1600607687939-ce8a6c25118c',
+  'photo-1600566753086-00f18fb6b3ea',
+  'photo-1600607687920-4e2a09cf159d',
+  'photo-1600566753190-17f0baa2a6c3',
+  'photo-1600210492486-724fe5c67fb0',
+  'photo-1613490493576-7fde63acd811',
+  'photo-1600047509807-ba8f99d2cdde',
+  'photo-1600566752355-35792bedcfea',
+  'photo-1600607687644-c7171b42498f',
+  'photo-1600566753190-17f0baa2a6c3',
+  'photo-1600607687939-ce8a6c25118c',
+  'photo-1600585154526-990dced4db0d',
+  'photo-1613977257363-707ba9348227',
+  'photo-1618221195710-dd6b41faaea6',
+  'photo-1616486338812-3dadae4b4ace',
+  'photo-1615529182904-14819c35db37',
+  'photo-1600210492493-0946911123ea',
+  'photo-1600607688969-a5bfcd646154',
+  'photo-1600566753190-17f0baa2a6c3',
+  'photo-1600607687920-4e2a09cf159d',
+  'photo-1600607687939-ce8a6c25118c',
+  'photo-1600585154340-be6161a56a0c',
+  'photo-1600566753086-00f18fb6b3ea',
+];
+
+const MOCK_AMENITY_SETS = [
+  ['wifi', 'air-conditioning', 'kitchen', 'balcony', 'free-parking'],
+  ['wifi', 'heating', 'workspace', 'mountain-view', 'free-parking'],
+  ['wifi', 'air-conditioning', 'garden', 'family-friendly', 'cctv'],
+  ['wifi', 'kitchen', 'refrigerator', 'washing-machine', 'workspace'],
+  ['wifi', 'air-conditioning', 'pool', 'garden', 'pet-friendly'],
+];
+
+function buildMockProperties(): SeedPropertyData[] {
+  return MOCK_DESTINATIONS.flatMap((destination, destinationIndex) =>
+    MOCK_STAY_STYLES.map((style, styleIndex) => {
+      const listingNumber = destinationIndex * MOCK_STAY_STYLES.length + styleIndex + 1;
+      const slug = `${destination.city.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${style.slug}-${String(listingNumber).padStart(3, '0')}`;
+      const imageOffset = (listingNumber * 3) % MOCK_STAY_IMAGE_IDS.length;
+      const images = Array.from({ length: 4 }, (_, imageIndex) => {
+        const imageId = MOCK_STAY_IMAGE_IDS[(imageOffset + imageIndex) % MOCK_STAY_IMAGE_IDS.length]!;
+        return {
+          url: `https://images.unsplash.com/${imageId}?auto=format&fit=crop&w=1400&q=85`,
+          alt: `${style.title} in ${destination.city} — ${['exterior and grounds', 'living space', 'bedroom', 'interior detail'][imageIndex]}`,
+          isCover: imageIndex === 0,
+        };
+      });
+
+      return {
+        slug,
+        title: `${style.title} · ${destination.city}`,
+        description: `${style.description} Set in ${destination.city}, ${destination.state}, this StayScape mock listing is furnished with reliable comforts and an easy base for exploring the area.`,
+        propertyType: style.type,
+        addressLine1: `${12 + styleIndex * 7} ${['Garden Lane', 'Hill View Road', 'Old Town Street', 'River Walk', 'Cedar Grove'][styleIndex]}`,
+        addressLine2: `StayScape sample home ${listingNumber}`,
+        city: destination.city,
+        state: destination.state,
+        country: 'India',
+        postalCode: destination.postalCode,
+        latitude: destination.latitude + (styleIndex - 2) * 0.003,
+        longitude: destination.longitude + (styleIndex - 2) * 0.003,
+        maxGuests: 2 + ((listingNumber + styleIndex) % 7),
+        bedrooms: 1 + (listingNumber % 4),
+        beds: 1 + (listingNumber % 5),
+        bathrooms: 1 + (listingNumber % 3),
+        pricePerNightPaise: 280000 + ((listingNumber * 13700) % 1420000),
+        cleaningFeePaise: 35000 + ((listingNumber * 2300) % 90000),
+        houseRules: ['No indoor smoking', 'Quiet hours after 10 PM', 'Treat the home with care'],
+        checkInFrom: '14:00',
+        checkOutUntil: '11:00',
+        amenitySlugs: MOCK_AMENITY_SETS[styleIndex]!,
+        images,
+      };
+    }),
+  );
+}
+
+export const MOCK_PROPERTIES = buildMockProperties();
+
 export async function seedAmenities() {
   console.log('Seeding initial amenities...');
   for (const amenity of INITIAL_AMENITIES) {
@@ -460,101 +607,128 @@ export async function seedPublishedProperties() {
   const allAmenities = await prisma.amenity.findMany();
   const amenityMap = new Map(allAmenities.map((a) => [a.slug, a.id]));
 
-  // 3. Seed properties
-  for (const propData of INITIAL_PROPERTIES) {
-    const existingProperty = await prisma.property.findUnique({
-      where: { slug: propData.slug },
+  // Batch writes to keep remote seed runs fast and safe to repeat. Slugs are
+  // stable, so an interrupted seed can be resumed without duplicating rows.
+  const properties = [...INITIAL_PROPERTIES, ...MOCK_PROPERTIES];
+  const propertySlugs = properties.map((property) => property.slug);
+  const now = new Date();
+  const existingProperties = await prisma.property.findMany({
+    where: { slug: { in: propertySlugs } },
+    select: { id: true, slug: true, status: true, publishedAt: true },
+  });
+  const existingSlugs = new Set(existingProperties.map((property) => property.slug));
+
+  await prisma.property.createMany({
+    data: properties
+      .filter((property) => !existingSlugs.has(property.slug))
+      .map((property) => ({
+        hostProfileId: hostProfile.id,
+        slug: property.slug,
+        title: property.title,
+        description: property.description,
+        propertyType: property.propertyType,
+        status: PropertyStatus.PUBLISHED,
+        addressLine1: property.addressLine1,
+        addressLine2: property.addressLine2,
+        city: property.city,
+        state: property.state,
+        country: property.country,
+        postalCode: property.postalCode,
+        latitude: property.latitude,
+        longitude: property.longitude,
+        maxGuests: property.maxGuests,
+        bedrooms: property.bedrooms,
+        beds: property.beds,
+        bathrooms: property.bathrooms,
+        pricePerNightPaise: property.pricePerNightPaise,
+        cleaningFeePaise: property.cleaningFeePaise,
+        currency: 'INR',
+        houseRules: property.houseRules,
+        checkInFrom: property.checkInFrom,
+        checkOutUntil: property.checkOutUntil,
+        publishedAt: now,
+      })),
+    skipDuplicates: true,
+  });
+
+  const propertyRecords = await prisma.property.findMany({
+    where: { slug: { in: propertySlugs } },
+    select: { id: true, slug: true },
+  });
+  const propertyIdBySlug = new Map(propertyRecords.map((property) => [property.slug, property.id]));
+  const existingIds = existingProperties.map((property) => property.id);
+
+  if (existingIds.length > 0) {
+    await prisma.property.updateMany({
+      where: { id: { in: existingIds }, status: { not: PropertyStatus.PUBLISHED } },
+      data: { status: PropertyStatus.PUBLISHED },
     });
-
-    let propertyId: string;
-
-    if (!existingProperty) {
-      const created = await prisma.property.create({
-        data: {
-          hostProfileId: hostProfile.id,
-          slug: propData.slug,
-          title: propData.title,
-          description: propData.description,
-          propertyType: propData.propertyType,
-          status: PropertyStatus.PUBLISHED,
-          addressLine1: propData.addressLine1,
-          addressLine2: propData.addressLine2,
-          city: propData.city,
-          state: propData.state,
-          country: propData.country,
-          postalCode: propData.postalCode,
-          latitude: propData.latitude,
-          longitude: propData.longitude,
-          maxGuests: propData.maxGuests,
-          bedrooms: propData.bedrooms,
-          beds: propData.beds,
-          bathrooms: propData.bathrooms,
-          pricePerNightPaise: propData.pricePerNightPaise,
-          cleaningFeePaise: propData.cleaningFeePaise,
-          currency: 'INR',
-          houseRules: propData.houseRules,
-          checkInFrom: propData.checkInFrom,
-          checkOutUntil: propData.checkOutUntil,
-          publishedAt: new Date(),
-        },
-      });
-      propertyId = created.id;
-    } else {
-      propertyId = existingProperty.id;
-      await prisma.property.update({
-        where: { id: propertyId },
-        data: {
-          status: PropertyStatus.PUBLISHED,
-          publishedAt: existingProperty.publishedAt ?? new Date(),
-        },
-      });
-    }
-
-    // Connect amenities
-    for (const slug of propData.amenitySlugs) {
-      const amenityId = amenityMap.get(slug);
-      if (amenityId) {
-        await prisma.propertyAmenity.upsert({
-          where: {
-            propertyId_amenityId: {
-              propertyId,
-              amenityId,
-            },
-          },
-          update: {},
-          create: {
-            propertyId,
-            amenityId,
-          },
-        });
-      }
-    }
-
-    // Create images if not present
-    const existingImages = await prisma.propertyImage.count({
-      where: { propertyId },
+    await prisma.property.updateMany({
+      where: { id: { in: existingIds }, publishedAt: null },
+      data: { publishedAt: now },
     });
-
-    if (existingImages === 0) {
-      for (let i = 0; i < propData.images.length; i++) {
-        const img = propData.images[i]!;
-        await prisma.propertyImage.create({
-          data: {
-            propertyId,
-            publicId: `seed_${propData.slug}_${i + 1}`,
-            secureUrl: img.url,
-            altText: img.alt,
-            width: 1200,
-            height: 800,
-            format: 'jpg',
-            bytes: 250000,
-            sortOrder: i,
-            isCover: img.isCover,
-          },
-        });
-      }
-    }
   }
+
+  const amenityRows = properties.flatMap((property) => {
+    const propertyId = propertyIdBySlug.get(property.slug);
+    if (!propertyId) return [];
+    return property.amenitySlugs.flatMap((slug) => {
+      const amenityId = amenityMap.get(slug);
+      return amenityId ? [{ propertyId, amenityId }] : [];
+    });
+  });
+  await prisma.propertyAmenity.createMany({ data: amenityRows, skipDuplicates: true });
+
+  const existingImageRows = await prisma.propertyImage.findMany({
+    where: { propertyId: { in: propertyRecords.map((property) => property.id) } },
+    select: { publicId: true },
+  });
+  const existingImageIds = new Set(existingImageRows.map((image) => image.publicId));
+  const imageRows = properties.flatMap((property) => {
+    const propertyId = propertyIdBySlug.get(property.slug);
+    if (!propertyId) return [];
+    return property.images.flatMap((image, index) => {
+      const publicId = `seed_${property.slug}_${index + 1}`;
+      return existingImageIds.has(publicId)
+        ? []
+        : [
+            {
+              propertyId,
+              publicId,
+              secureUrl: image.url,
+              altText: image.alt,
+              width: 1400,
+              height: 933,
+              format: 'jpg',
+              bytes: 250000,
+              sortOrder: index,
+              isCover: image.isCover,
+            },
+          ];
+    });
+  });
+  await prisma.propertyImage.createMany({ data: imageRows, skipDuplicates: true });
+
+  const mockPropertyIds = MOCK_PROPERTIES.flatMap((property) => {
+    const id = propertyIdBySlug.get(property.slug);
+    return id ? [id] : [];
+  });
+  const [mockPropertyCount, mockImageCount] = await Promise.all([
+    prisma.property.count({ where: { id: { in: mockPropertyIds } } }),
+    prisma.propertyImage.count({ where: { propertyId: { in: mockPropertyIds } } }),
+  ]);
+  const expectedMockImageCount = MOCK_PROPERTIES.reduce(
+    (total, property) => total + property.images.length,
+    0,
+  );
+  if (mockPropertyCount !== MOCK_PROPERTIES.length || mockImageCount < expectedMockImageCount) {
+    throw new Error(
+      `Mock stay seed verification failed: ${mockPropertyCount}/${MOCK_PROPERTIES.length} stays, ${mockImageCount}/${expectedMockImageCount} images.`,
+    );
+  }
+  console.log(
+    `Verified ${mockPropertyCount} mock stays with ${mockImageCount} gallery images.`,
+  );
 
   const publishedCount = await prisma.property.count({
     where: { status: PropertyStatus.PUBLISHED },

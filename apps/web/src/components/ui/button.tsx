@@ -11,7 +11,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', asChild = false, children, ...props }, ref) => {
     const variants = {
       primary:
-        'bg-[var(--text-primary)] text-white hover:bg-black focus-visible:ring-2 focus-visible:ring-[var(--text-primary)]',
+        'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]',
       secondary:
         'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--border)] focus-visible:ring-2 focus-visible:ring-[var(--text-secondary)]',
       outline:

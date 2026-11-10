@@ -29,7 +29,17 @@ export interface ExtractedPreferences {
   summary: string;
 }
 
-export interface RankedPropertyItem extends PublicPropertySummary {
+export interface RankedPropertyItem extends Omit<PublicPropertySummary, 'coverImage'> {
+  // Search/StayMatch API responses expose ordered images, with secureUrl and isCover.
+  images?: Array<{
+    id: string;
+    secureUrl: string;
+    altText: string | null;
+    sortOrder: number;
+    isCover: boolean;
+  }>;
+  /** Compatibility with an older API response shape. */
+  coverImage?: { url: string; caption?: string | null } | null;
   matchScore: number;
   matchReasons: string[];
   tradeOffs: string[];

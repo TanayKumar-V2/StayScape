@@ -1,9 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { adminApi } from '@/lib/api';
-import type { AdminDashboardOverview, AdminTimeseriesData } from '@/types/admin';
+import type {
+  AdminAiUsageStats,
+  AdminAuditLogItem,
+  AdminDashboardOverview,
+  AdminTimeseriesData,
+} from '@/types/admin';
 import {
   Users,
   Building2,
@@ -20,23 +26,38 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+
+const AdminTrendsChart = dynamic(
+  () => import('@/components/admin/admin-trends-chart').then((module) => module.AdminTrendsChart),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[270px] animate-pulse rounded-xl bg-[var(--bg-secondary)]" aria-label="Loading platform trends" />
+    ),
+  },
+);
 
 export default function AdminOverviewPage() {
   const [overview, setOverview] = useState<AdminDashboardOverview | null>(null);
   const [timeseries, setTimeseries] = useState<AdminTimeseriesData | null>(null);
+  const [aiUsage, setAiUsage] = useState<AdminAiUsageStats | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLogItem[]>([]);
   const [selectedMetric, setSelectedMetric] = useState<'bookings' | 'users' | 'revenue'>(
     'bookings',
   );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOverviewData = async () => {
+  const fetchOverviewData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const [ovRes, tsRes] = await Promise.all([
+      const [ovRes, tsRes, aiRes, auditRes] = await Promise.all([
         adminApi.getOverview(),
         adminApi.getTimeseries(selectedMetric, '30d'),
+        adminApi.getAiUsageStats(),
+        adminApi.getAuditLogs({ page: 1, limit: 5 }),
       ]);
 
       if (ovRes.data) {
@@ -48,16 +69,18 @@ export default function AdminOverviewPage() {
       if (tsRes.data) {
         setTimeseries(tsRes.data);
       }
+      if (aiRes.data) setAiUsage(aiRes.data);
+      if (auditRes.data) setAuditLogs(auditRes.data.data);
     } catch {
       setError('An unexpected network error occurred while loading dashboard data.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedMetric]);
 
   useEffect(() => {
     void fetchOverviewData();
-  }, [selectedMetric]);
+  }, [fetchOverviewData]);
 
   const formatPaiseToInr = (paise: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -123,7 +146,7 @@ export default function AdminOverviewPage() {
           <div className="bg-white rounded-2xl p-5 border border-[var(--border)] shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                Gross Booking Volume
+                Gross Captured Volume
               </span>
               <div className="p-2 rounded-xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
                 <CalendarCheck className="w-4 h-4" />
@@ -131,14 +154,14 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {formatPaiseToInr(overview.bookings.totalVolumePaise)}
+                {formatPaiseToInr(overview.payments.grossCapturedPaise)}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
                 <span className="font-semibold text-emerald-700">
-                  {overview.bookings.confirmed} confirmed
+                  {overview.summary.confirmedBookings} confirmed
                 </span>
                 <span>•</span>
-                <span>{overview.bookings.total} total bookings</span>
+                <span>{overview.summary.totalBookings} total bookings</span>
               </div>
             </div>
           </div>
@@ -147,7 +170,7 @@ export default function AdminOverviewPage() {
           <div className="bg-white rounded-2xl p-5 border border-[var(--border)] shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                Captured Payments
+                Net Captured Payments
               </span>
               <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
                 <CreditCard className="w-4 h-4" />
@@ -155,18 +178,10 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {formatPaiseToInr(overview.payments.capturedVolumePaise)}
+                {formatPaiseToInr(overview.payments.netCapturedPaise)}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
-                <span>{overview.payments.capturedCount} transactions</span>
-                {overview.payments.pendingRefundsCount > 0 ? (
-                  <>
-                    <span>•</span>
-                    <span className="text-amber-700 font-medium">
-                      {overview.payments.pendingRefundsCount} pending refund(s)
-                    </span>
-                  </>
-                ) : null}
+                <span>{formatPaiseToInr(overview.payments.processedRefundsPaise)} refunded</span>
               </div>
             </div>
           </div>
@@ -183,28 +198,12 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {overview.properties.published}
+                {overview.summary.publishedProperties}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
                 <span className="text-emerald-700 font-medium">
-                  {overview.properties.approved} approved
+                  of {overview.summary.totalProperties} total listings
                 </span>
-                {overview.properties.flagged > 0 ? (
-                  <>
-                    <span>•</span>
-                    <span className="text-amber-700 font-medium">
-                      {overview.properties.flagged} flagged
-                    </span>
-                  </>
-                ) : null}
-                {overview.properties.rejected > 0 ? (
-                  <>
-                    <span>•</span>
-                    <span className="text-rose-700 font-medium">
-                      {overview.properties.rejected} rejected
-                    </span>
-                  </>
-                ) : null}
               </div>
             </div>
           </div>
@@ -221,12 +220,11 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {overview.reports.open + overview.reports.underReview}
+                {overview.summary.openReports}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
-                <span className="text-amber-700 font-medium">{overview.reports.open} open</span>
+                <span className="text-amber-700 font-medium">Open or under review</span>
                 <span>•</span>
-                <span>{overview.reports.underReview} under review</span>
               </div>
             </div>
           </div>
@@ -243,12 +241,13 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {overview.users.total}
+                {overview.summary.totalUsers}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
-                <span className="text-emerald-700 font-medium">{overview.users.active} active</span>
+                <span className="text-emerald-700 font-medium">
+                  {overview.summary.activeUsers} active
+                </span>
                 <span>•</span>
-                <span>+{overview.users.newLast30Days} new (30d)</span>
               </div>
             </div>
           </div>
@@ -265,18 +264,12 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {overview.hosts.total}
+                {overview.summary.totalHosts}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
-                <span className="text-emerald-700 font-medium">{overview.hosts.active} active</span>
-                {overview.hosts.suspended > 0 ? (
-                  <>
-                    <span>•</span>
-                    <span className="text-rose-700 font-medium">
-                      {overview.hosts.suspended} suspended
-                    </span>
-                  </>
-                ) : null}
+                <span className="text-emerald-700 font-medium">
+                  {overview.summary.activeHosts} active
+                </span>
               </div>
             </div>
           </div>
@@ -293,10 +286,10 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {overview.ai.totalRequests}
+                {aiUsage?.summary.totalRequests.toLocaleString() ?? '—'}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
-                <span>{overview.ai.last24HoursRequests} requests in last 24h</span>
+                <span>AI requests in the last 30 days</span>
               </div>
             </div>
           </div>
@@ -313,13 +306,13 @@ export default function AdminOverviewPage() {
             </div>
             <div className="mt-4">
               <p className="text-2xl font-bold text-[var(--text-primary)]">
-                {overview.bookings.completed}
+                {overview.summary.completedBookings}
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
                 <span>Completed stays</span>
                 <span>•</span>
                 <span className="text-amber-700 font-medium">
-                  {overview.bookings.activeHolds} active holds
+                  {overview.summary.confirmedBookings} currently confirmed
                 </span>
               </div>
             </div>
@@ -328,7 +321,7 @@ export default function AdminOverviewPage() {
       ) : null}
 
       {/* Interactive Time-series Chart */}
-      <div className="bg-white rounded-3xl p-6 border border-[var(--border)] shadow-xs space-y-6">
+      <Card className="rounded-2xl p-6 shadow-[0_14px_42px_-36px_rgba(24,38,34,.55)] space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="font-serif text-xl font-bold text-[var(--text-primary)]">
@@ -355,51 +348,15 @@ export default function AdminOverviewPage() {
           </div>
         </div>
 
-        {/* SVG Chart visualization */}
+        {/* Bklit animated time-series chart */}
         {timeseries && timeseries.points.length > 0 ? (
-          <div className="w-full h-64 flex flex-col justify-end pt-8">
-            <div className="flex-1 flex items-end gap-1 sm:gap-2">
-              {(() => {
-                const maxVal = Math.max(
-                  ...timeseries.points.map((p) =>
-                    selectedMetric === 'revenue' ? (p.value ?? 0) / 100 : p.count,
-                  ),
-                  1,
-                );
-                return timeseries.points.map((pt, idx) => {
-                  const val = selectedMetric === 'revenue' ? (pt.value ?? 0) / 100 : pt.count;
-                  const heightPercent = Math.max(8, Math.round((val / maxVal) * 100));
-
-                  return (
-                    <div
-                      key={idx}
-                      className="flex-1 flex flex-col items-center group relative h-full justify-end"
-                    >
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--text-primary)] text-white text-[10px] px-2 py-1 rounded-md pointer-events-none whitespace-nowrap z-10 shadow-md">
-                        {pt.date}: {selectedMetric === 'revenue' ? `₹${val.toLocaleString()}` : val}
-                      </div>
-                      <div
-                        style={{ height: `${heightPercent}%` }}
-                        className="w-full bg-[var(--accent-primary)] group-hover:bg-[var(--accent-primary-hover)] rounded-t-md transition-all duration-300"
-                      />
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-            <div className="flex justify-between text-[11px] text-[var(--text-secondary)] mt-3 border-t border-[var(--border)] pt-2">
-              <span>{timeseries.points[0]?.date}</span>
-              <span>{timeseries.points[Math.floor(timeseries.points.length / 2)]?.date}</span>
-              <span>{timeseries.points[timeseries.points.length - 1]?.date}</span>
-            </div>
-          </div>
+          <AdminTrendsChart points={timeseries.points} metric={selectedMetric} />
         ) : (
           <div className="h-48 flex items-center justify-center text-sm text-[var(--text-secondary)]">
             No activity data recorded in the selected 30-day window.
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Moderation Fast-lane & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -431,8 +388,7 @@ export default function AdminOverviewPage() {
                     User Content Reports
                   </p>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {overview?.reports.open ?? 0} open, {overview?.reports.underReview ?? 0} in
-                    review
+                    {overview?.summary.openReports ?? 0} open or under review
                   </p>
                 </div>
               </div>
@@ -452,7 +408,7 @@ export default function AdminOverviewPage() {
                     Flagged Listings
                   </p>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {overview?.properties.flagged ?? 0} properties flagged
+                    Open the listings moderation queue
                   </p>
                 </div>
               </div>
@@ -472,7 +428,7 @@ export default function AdminOverviewPage() {
                     Pending Refunds
                   </p>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {overview?.payments.pendingRefundsCount ?? 0} pending processing
+                    Review refund requests and processing status
                   </p>
                 </div>
               </div>
@@ -510,8 +466,8 @@ export default function AdminOverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
-                {overview?.recentActivity && overview.recentActivity.length > 0 ? (
-                  overview.recentActivity.slice(0, 5).map((act) => (
+                {auditLogs.length > 0 ? (
+                  auditLogs.map((act) => (
                     <tr key={act.id} className="hover:bg-[var(--bg-primary)]">
                       <td className="py-3 text-[var(--text-secondary)] whitespace-nowrap">
                         {new Date(act.createdAt).toLocaleString(undefined, {
@@ -522,7 +478,7 @@ export default function AdminOverviewPage() {
                         })}
                       </td>
                       <td className="py-3 font-medium text-[var(--text-primary)] whitespace-nowrap">
-                        {act.adminUser.firstName} ({act.adminUser.email})
+                        {act.adminUserName || act.adminUserEmail}
                       </td>
                       <td className="py-3">
                         <span className="font-mono text-[10px] uppercase px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-primary)] font-semibold">

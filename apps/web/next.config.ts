@@ -74,6 +74,9 @@ if (!isDev) {
 }
 
 const nextConfig: NextConfig = {
+  // Keep `next dev` assets isolated from production builds. Both commands used
+  // `.next`, so a build could replace the CSS files a running dev server links.
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
   images: {
     remotePatterns: [
       {

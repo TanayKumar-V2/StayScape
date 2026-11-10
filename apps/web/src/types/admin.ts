@@ -1,60 +1,22 @@
 export interface AdminDashboardOverview {
-  users: {
-    total: number;
-    active: number;
-    suspended: number;
-    newLast30Days: number;
-  };
-  hosts: {
-    total: number;
-    active: number;
-    suspended: number;
-  };
-  properties: {
-    total: number;
-    published: number;
-    approved: number;
-    flagged: number;
-    rejected: number;
-    draft: number;
-  };
-  bookings: {
-    total: number;
-    confirmed: number;
-    completed: number;
-    cancelled: number;
-    expired: number;
-    activeHolds: number;
-    totalVolumePaise: number;
+  summary: {
+    totalUsers: number;
+    activeUsers: number;
+    totalHosts: number;
+    activeHosts: number;
+    totalProperties: number;
+    publishedProperties: number;
+    totalBookings: number;
+    confirmedBookings: number;
+    completedBookings: number;
+    openReports: number;
   };
   payments: {
-    capturedCount: number;
-    capturedVolumePaise: number;
-    pendingRefundsCount: number;
+    grossCapturedPaise: number;
+    processedRefundsPaise: number;
+    netCapturedPaise: number;
+    currency: string;
   };
-  reports: {
-    open: number;
-    underReview: number;
-    resolved: number;
-    dismissed: number;
-  };
-  ai: {
-    totalRequests: number;
-    last24HoursRequests: number;
-  };
-  recentActivity: Array<{
-    id: string;
-    action: string;
-    entityType: string;
-    entityId: string;
-    reason: string | null;
-    createdAt: string;
-    adminUser: {
-      email: string;
-      firstName: string;
-      lastName: string;
-    };
-  }>;
 }
 
 export interface AdminTimeseriesData {
@@ -128,38 +90,54 @@ export interface AdminUserDetails extends AdminUserItem {
 
 export interface AdminHostItem {
   id: string;
+  userId: string;
   displayName: string;
+  bio: string | null;
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
+  createdAt: string;
+  userEmail: string;
+  userName: string;
+  userStatus: string;
+  totalProperties: number;
+  publishedProperties: number;
+}
+
+export interface AdminHostDetails {
+  id: string;
+  displayName: string;
+  bio: string | null;
+  contactPhone: string | null;
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
+  termsAcceptedAt: string;
   createdAt: string;
   user: {
     id: string;
     email: string;
     name: string;
     avatarUrl: string | null;
-    accountStatus: string;
+    status: string;
+    createdAt: string;
+    lastLoginAt: string | null;
   };
-  counts: {
-    properties: number;
+  stats: {
+    totalProperties: number;
     publishedProperties: number;
-    totalBookings: number;
+    draftProperties: number;
+    pausedProperties: number;
   };
-  metrics: {
-    completedStays: number;
-    grossVolumePaise: number;
-  };
-}
-
-export interface AdminHostDetails extends AdminHostItem {
-  bio: string | null;
   properties: Array<{
     id: string;
     title: string;
     slug: string;
+    location: string;
+    propertyType: string;
     status: string;
     moderationStatus: string;
-    city: string;
-    basePricePaise: number;
+    pricePerNightPaise: number;
+    coverImage: string | null;
     bookingsCount: number;
+    reviewsCount: number;
+    createdAt: string;
   }>;
 }
 
@@ -420,39 +398,32 @@ export interface AdminRefundItem {
 }
 
 export interface AdminAiUsageStats {
-  totals: {
+  summary: {
     totalRequests: number;
-    promptTokens: number;
-    completionTokens: number;
+    successfulRequests: number;
+    failedRequests: number;
+    successRatePercentage: number;
+    totalInputTokens: number;
+    totalOutputTokens: number;
     totalTokens: number;
-    estimatedCostUsd: number;
-    avgLatencyMs: number;
-    errorCount: number;
-    errorRate: number;
+    averageDurationMs: number;
   };
-  byFeature: Record<
-    string,
-    {
-      count: number;
-      promptTokens: number;
-      completionTokens: number;
-      totalTokens: number;
-      estimatedCostUsd: number;
-      avgLatencyMs: number;
-    }
-  >;
-  recentLogs: Array<{
-    id: string;
+  requestsByFeature: Array<{
     feature: string;
+    count: number;
+    averageDurationMs: number;
+  }>;
+  requestsByModel: Array<{
     model: string;
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-    latencyMs: number;
-    statusCode: number;
-    errorMessage: string | null;
-    createdAt: string;
-    userEmail: string | null;
+    count: number;
+  }>;
+  dailyTrends: Array<{
+    date: string;
+    total: number;
+    success: number;
+    failed: number;
+    tokens: number;
+    avgDurationMs: number;
   }>;
 }
 

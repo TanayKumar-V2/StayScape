@@ -1,0 +1,77 @@
+# syntax=docker/dockerfile:1
+# ─────────────────────────────────────────────────────────────────────────────
+# StayScape API — Production Multi-stage Dockerfile
+# Target: NestJS REST API & Socket.IO Gateway (Web Service)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Stage 1: Base Runtime with Package Manager
+FROM node:20-bookworm-slim AS base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    ca-certificates \
+    dumb-init \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN npm install -g pnpm@10
+
+WORKDIR /app
+
+# Stage 2: Dependencies and Build
+FROM base AS builder
+
+# Copy monorepo workspace definition and lockfile
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+
+# Install all dependencies (including devDependencies needed for build)
+RUN pnpm install --frozen-lockfile
+
+# Copy Prisma schema and generate client
+COPY apps/api/prisma ./apps/api/prisma
+RUN pnpm --filter @stayscape/api prisma:generate
+
+# Copy API configuration and source code
+COPY apps/api/tsconfig*.json apps/api/nest-cli.json ./apps/api/
+COPY apps/api/src ./apps/api/src
+COPY apps/api/scripts ./apps/api/scripts
+
+# Build TypeScript to dist/
+RUN pnpm --filter @stayscape/api build
+
+# Stage 3: Production Runner
+FROM base AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=4000
+ENV ENABLE_WORKERS=false
+
+# Create required app directories and set non-root ownership
+RUN chown -R node:node /app
+
+# Copy production node_modules from builder
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+
+# Copy Prisma schema & migrations for runtime direct connections / releases
+COPY --chown=node:node --from=builder /app/apps/api/prisma ./prisma
+
+# Copy built application artifacts
+COPY --chown=node:node --from=builder /app/apps/api/dist ./dist
+COPY --chown=node:node --from=builder /app/apps/api/package.json ./package.json
+
+USER node
+
+EXPOSE 4000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD curl -f http://127.0.0.1:${PORT:-4000}/api/v1/health/ready || exit 1
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "dist/main.js"]

@@ -19,9 +19,15 @@ interface PropertyCardProps {
   property: PropertyCardData;
   className?: string;
   priority?: boolean;
+  searchDates?: { checkIn?: string; checkOut?: string; guests?: number };
 }
 
-export function PropertyCard({ property, className, priority = false }: PropertyCardProps) {
+export function PropertyCard({
+  property,
+  className,
+  priority = false,
+  searchDates,
+}: PropertyCardProps) {
   const { isSaved, toggleWishlist } = useWishlist();
   const [imgError, setImgError] = useState(false);
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
@@ -35,6 +41,15 @@ export function PropertyCard({ property, className, priority = false }: Property
 
   const title = property.title;
   const slug = property.slug;
+  const detailUrl = (() => {
+    const params = new URLSearchParams();
+    if (searchDates?.checkIn) params.set('checkIn', searchDates.checkIn);
+    if (searchDates?.checkOut) params.set('checkOut', searchDates.checkOut);
+    if (searchDates?.guests && searchDates.guests > 1)
+      params.set('guests', String(searchDates.guests));
+    const query = params.toString();
+    return `/stays/${slug}${query ? `?${query}` : ''}`;
+  })();
 
   const propertyTypeLabel = isPublicSummary
     ? formatPropertyType(property.propertyType)
@@ -66,20 +81,20 @@ export function PropertyCard({ property, className, priority = false }: Property
   return (
     <article
       className={cn(
-        'group relative bg-white rounded-3xl overflow-hidden border border-[var(--border)] transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col',
+        'group relative bg-white rounded-[1.25rem] overflow-hidden border border-[var(--border)]/90 transition-all duration-500 hover:shadow-[0_24px_56px_-34px_rgba(20,48,39,.5)] hover:-translate-y-1 flex flex-col',
         className,
       )}
     >
       {/* Property Image Container */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-[var(--bg-secondary)]">
-        <Link href={`/stays/${slug}`} className="block w-full h-full">
+      <div className="relative aspect-[1.16/1] w-full overflow-hidden bg-[var(--bg-secondary)]">
+        <Link href={detailUrl} className="block w-full h-full">
           <Image
             src={imageUrl}
             alt={title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             priority={priority}
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
             onError={() => setImgError(true)}
           />
         </Link>
@@ -146,7 +161,7 @@ export function PropertyCard({ property, className, priority = false }: Property
 
           {/* Title */}
           <h3 className="font-serif text-lg font-bold text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent-primary)] transition-colors">
-            <Link href={`/stays/${slug}`}>{title}</Link>
+            <Link href={detailUrl}>{title}</Link>
           </h3>
 
           {/* Location details */}
@@ -180,7 +195,7 @@ export function PropertyCard({ property, className, priority = false }: Property
           </div>
 
           <Link
-            href={`/stays/${slug}`}
+            href={detailUrl}
             className="text-xs font-semibold text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] underline underline-offset-4 decoration-1 hover:decoration-2 transition-all"
           >
             View Details

@@ -103,9 +103,6 @@ export function Footer() {
               <li>
                 <span className="text-[var(--text-secondary)]/70 flex items-center gap-1.5">
                   Host Protection Policy
-                  <span className="text-[10px] bg-[var(--border)] px-1.5 py-0.5 rounded">
-                    Phase 4
-                  </span>
                 </span>
               </li>
               <li>

@@ -25,6 +25,9 @@ interface BookingCardProps {
   maxGuests: number;
   rating?: number;
   reviewCount?: number;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuests?: number;
 }
 
 export function BookingCard({
@@ -33,13 +36,16 @@ export function BookingCard({
   maxGuests,
   rating,
   reviewCount = 0,
+  initialCheckIn = '',
+  initialCheckOut = '',
+  initialGuests = 1,
 }: BookingCardProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
 
-  const [checkIn, setCheckIn] = useState<string>('');
-  const [checkOut, setCheckOut] = useState<string>('');
-  const [guests, setGuests] = useState<number>(1);
+  const [checkIn, setCheckIn] = useState<string>(initialCheckIn);
+  const [checkOut, setCheckOut] = useState<string>(initialCheckOut);
+  const [guests, setGuests] = useState<number>(Math.min(maxGuests, Math.max(1, initialGuests)));
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(true);
 
   const [unavailableRanges, setUnavailableRanges] = useState<UnavailableRange[]>([]);

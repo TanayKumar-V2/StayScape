@@ -18,6 +18,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { MessagesModule } from './messages/messages.module';
 import { AdminModule } from './admin/admin.module';
+import { WorkerSchedulerService } from './worker-scheduler.service';
 
 @Module({
   imports: [
@@ -67,5 +68,6 @@ import { AdminModule } from './admin/admin.module';
     MessagesModule,
     AdminModule,
   ],
+  providers: [WorkerSchedulerService],
 })
 export class AppModule {}

@@ -8,6 +8,11 @@ import { BookingsController } from './bookings.controller';
 import { BookingExpirationProcessor } from './booking-expiration.processor';
 import { BookingCompletionProcessor } from './booking-completion.processor';
 
+const bookingWorkerProviders =
+  process.env['ENABLE_WORKERS'] === 'false'
+    ? []
+    : [BookingExpirationProcessor, BookingCompletionProcessor];
+
 @Module({
   imports: [
     PrismaModule,
@@ -23,7 +28,7 @@ import { BookingCompletionProcessor } from './booking-completion.processor';
     ),
   ],
   controllers: [BookingsController],
-  providers: [BookingsService, BookingExpirationProcessor, BookingCompletionProcessor],
+  providers: [BookingsService, ...bookingWorkerProviders],
   exports: [BookingsService],
 })
 export class BookingsModule {}

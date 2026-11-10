@@ -34,6 +34,8 @@ export class TokenService {
   private readonly accessTokenExpiresIn: string;
   private readonly refreshTokenExpiresIn: string;
   private readonly isProduction: boolean;
+  private readonly cookieDomain?: string;
+  private readonly cookieSecure: boolean;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -46,6 +48,9 @@ export class TokenService {
     this.refreshTokenExpiresIn =
       this.configService.get<string>('app.auth.refreshTokenExpiresIn') ?? '7d';
     this.isProduction = this.configService.get<string>('app.nodeEnv') === 'production';
+    this.cookieDomain = this.configService.get<string | undefined>('app.cookieDomain');
+    this.cookieSecure =
+      this.configService.get<boolean>('app.cookieSecure') ?? this.isProduction;
   }
 
   /** Generates a signed short-lived JWT access token. */
@@ -125,9 +130,10 @@ export class TokenService {
   getAccessCookieOptions(): CookieOptions {
     return {
       httpOnly: true,
-      secure: this.isProduction,
+      secure: this.cookieSecure,
       sameSite: 'lax',
       path: COOKIE_ACCESS_PATH,
+      ...(this.cookieDomain ? { domain: this.cookieDomain } : {}),
       maxAge: ACCESS_TOKEN_TTL_MS,
     };
   }
@@ -136,9 +142,10 @@ export class TokenService {
   getRefreshCookieOptions(): CookieOptions {
     return {
       httpOnly: true,
-      secure: this.isProduction,
+      secure: this.cookieSecure,
       sameSite: 'lax',
       path: COOKIE_REFRESH_PATH,
+      ...(this.cookieDomain ? { domain: this.cookieDomain } : {}),
       maxAge: REFRESH_TOKEN_TTL_MS,
     };
   }
@@ -147,9 +154,10 @@ export class TokenService {
   getClearAccessCookieOptions(): CookieOptions {
     return {
       httpOnly: true,
-      secure: this.isProduction,
+      secure: this.cookieSecure,
       sameSite: 'lax',
       path: COOKIE_ACCESS_PATH,
+      ...(this.cookieDomain ? { domain: this.cookieDomain } : {}),
       maxAge: 0,
     };
   }
@@ -158,9 +166,10 @@ export class TokenService {
   getClearRefreshCookieOptions(): CookieOptions {
     return {
       httpOnly: true,
-      secure: this.isProduction,
+      secure: this.cookieSecure,
       sameSite: 'lax',
       path: COOKIE_REFRESH_PATH,
+      ...(this.cookieDomain ? { domain: this.cookieDomain } : {}),
       maxAge: 0,
     };
   }

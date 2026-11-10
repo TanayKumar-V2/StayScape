@@ -38,6 +38,8 @@ export default function BookingConfirmationPage() {
   const [booking, setBooking] = useState<SerializedBookingResponse | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatusSummary | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [paymentLoadError, setPaymentLoadError] = useState(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [isItineraryModalOpen, setIsItineraryModalOpen] = useState<boolean>(false);
 
@@ -52,21 +54,40 @@ export default function BookingConfirmationPage() {
   const fetchDetails = useCallback(async () => {
     if (!bookingReference) return;
     setIsLoading(true);
+    setLoadError(null);
+    setPaymentLoadError(false);
 
     try {
-      const [bookingRes, paymentRes] = await Promise.all([
+      const [bookingResult, paymentResult] = await Promise.allSettled([
         bookingsApi.getDetail(bookingReference),
         paymentsApi.getPaymentStatus(bookingReference),
       ]);
 
-      if (bookingRes.data) {
+      const bookingRes = bookingResult.status === 'fulfilled' ? bookingResult.value : null;
+      const paymentRes = paymentResult.status === 'fulfilled' ? paymentResult.value : null;
+      if (bookingRes?.data) {
         setBooking(bookingRes.data);
+      } else {
+        setLoadError(
+          bookingRes?.error ||
+            'We could not load this booking right now. Please retry or check your bookings.',
+        );
       }
-      if (paymentRes.data) {
+      if (paymentRes?.data) {
         setPaymentStatus(paymentRes.data);
+      } else {
+        setPaymentLoadError(true);
+      }
+      if (paymentResult.status === 'rejected') setPaymentLoadError(true);
+      if (bookingResult.status === 'rejected') {
+        setLoadError(
+          'We could not load this booking right now. Please retry or check your bookings.',
+        );
       }
     } catch {
-      // Ignore network errors on initial render
+      setLoadError(
+        'We could not load this booking right now. Please retry or check your bookings.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -113,17 +134,28 @@ export default function BookingConfirmationPage() {
               <AlertTriangle className="w-6 h-6" />
             </div>
             <h1 className="font-serif text-2xl font-bold text-[var(--text-primary)] mb-2">
-              Reservation Not Found
+              {loadError ? 'Confirmation temporarily unavailable' : 'Reservation Not Found'}
             </h1>
             <p className="text-sm text-[var(--text-secondary)] mb-6">
-              Could not retrieve the confirmed booking reference.
+              {loadError || 'Could not retrieve this booking reference.'}
             </p>
-            <Link
-              href="/account/bookings"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[var(--text-primary)] text-white text-sm font-medium hover:bg-black transition-colors"
-            >
-              <span>View My Bookings</span>
-            </Link>
+            <div className="flex flex-wrap justify-center gap-3">
+              {loadError && (
+                <button
+                  type="button"
+                  onClick={() => void fetchDetails()}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[var(--text-primary)] text-white text-sm font-medium hover:bg-black transition-colors"
+                >
+                  Retry
+                </button>
+              )}
+              <Link
+                href="/account/bookings"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
+              >
+                <span>View My Bookings</span>
+              </Link>
+            </div>
           </div>
         </PageContainer>
       </div>
@@ -146,20 +178,41 @@ export default function BookingConfirmationPage() {
             </div>
 
             <span className="inline-block px-3.5 py-1 rounded-full text-xs font-semibold bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] mb-3">
-              Payment Successful &amp; Guaranteed
+              {paymentStatus?.isPaid
+                ? 'Payment Successful & Guaranteed'
+                : paymentStatus
+                  ? 'Payment Not Yet Confirmed'
+                  : 'Payment Status Unavailable'}
             </span>
 
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[var(--text-primary)] mb-3">
-              You&apos;re All Set for Your Stay!
+              {paymentStatus?.isPaid ? "You're All Set for Your Stay!" : 'Reservation details'}
             </h1>
 
             <p className="text-sm text-[var(--text-secondary)] max-w-lg mx-auto mb-6">
-              Your reservation at{' '}
-              <strong className="text-[var(--text-primary)]">
-                {booking.propertyTitleSnapshot}
-              </strong>{' '}
-              has been paid in full and secured with instant host confirmation.
+              {paymentStatus?.isPaid ? (
+                <>
+                  Your reservation at{' '}
+                  <strong className="text-[var(--text-primary)]">
+                    {booking.propertyTitleSnapshot}
+                  </strong>{' '}
+                  has been paid in full and secured with instant host confirmation.
+                </>
+              ) : paymentLoadError ? (
+                'Your booking details loaded, but we could not verify the payment status. Retry the page or check your bookings before making another payment.'
+              ) : (
+                'Your booking details are available. Payment is not confirmed yet; check your bookings for the latest status.'
+              )}
             </p>
+            {!paymentStatus?.isPaid && (
+              <button
+                type="button"
+                onClick={() => void fetchDetails()}
+                className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-primary)]"
+              >
+                Check payment status again
+              </button>
+            )}
 
             {/* Reference Badge with Copy */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border)]">

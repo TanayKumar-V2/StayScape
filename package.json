@@ -27,9 +27,18 @@
     "prisma:studio": "pnpm --filter @stayscape/api prisma:studio",
     "test": "pnpm -r test",
     "test:api": "pnpm --filter @stayscape/api test",
-    "test:e2e": "pnpm --filter @stayscape/api test:e2e"
+    "test:e2e": "pnpm --filter @stayscape/api test:e2e",
+    "smoke-test": "pnpm --filter @stayscape/api exec ts-node --project tsconfig.json ../../scripts/production-smoke-test.ts"
   },
   "devDependencies": {
     "prettier": "3.4.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "multer": "2.5.0",
+      "postcss": "8.5.32",
+      "sharp": "0.35.5",
+      "deepmerge-ts": "8.0.0"
+    }
   }
 }

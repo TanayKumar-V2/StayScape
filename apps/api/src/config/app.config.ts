@@ -3,12 +3,16 @@ import * as Joi from 'joi';
 
 export interface AppConfig {
   nodeEnv: string;
+  appEnv: string;
   port: number;
   webOrigin: string;
   /** Extra browser origins allowed with credentials (comma-separated WEB_CORS_ORIGINS). */
   corsOrigins: string[];
   /** Client IPs trusted to set X-Forwarded-For (comma-separated TRUSTED_PROXIES: loopback | ip | cidr). */
   trustedProxies: string[];
+  cookieDomain?: string;
+  cookieSecure: boolean;
+  enableWorkers: boolean;
   databaseUrl: string;
   directUrl: string;
   redisUrl: string;
@@ -42,6 +46,7 @@ export default registerAs(
   'app',
   (): AppConfig => ({
     nodeEnv: process.env['NODE_ENV'] ?? 'development',
+    appEnv: process.env['APP_ENV'] ?? process.env['NODE_ENV'] ?? 'development',
     port: parseInt(process.env['PORT'] ?? '4000', 10),
     webOrigin: process.env['WEB_ORIGIN'] ?? 'http://localhost:3000',
     corsOrigins: process.env['WEB_ORIGINS']
@@ -54,6 +59,9 @@ export default registerAs(
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean),
+    cookieDomain: process.env['COOKIE_DOMAIN'] || undefined,
+    cookieSecure: process.env['COOKIE_SECURE'] === 'true' || process.env['NODE_ENV'] === 'production',
+    enableWorkers: process.env['ENABLE_WORKERS'] !== 'false',
     databaseUrl: process.env['DATABASE_URL'] ?? '',
     directUrl: process.env['DIRECT_URL'] ?? '',
     redisUrl: process.env['REDIS_URL'] ?? 'redis://localhost:6379',
@@ -87,7 +95,11 @@ export default registerAs(
 /** Joi schema that validates required environment variables at startup. */
 export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+  APP_ENV: Joi.string().valid('production', 'staging', 'development', 'test').default('development'),
   PORT: Joi.number().integer().min(1).max(65535).default(4000),
+  COOKIE_DOMAIN: Joi.string().allow('').optional(),
+  COOKIE_SECURE: Joi.string().valid('true', 'false').optional(),
+  ENABLE_WORKERS: Joi.string().valid('true', 'false').optional(),
   WEB_ORIGIN: Joi.when('NODE_ENV', {
     is: 'production',
     then: Joi.string()
@@ -197,9 +209,15 @@ export const validationSchema = Joi.object({
   }),
   RAZORPAY_KEY_ID: Joi.when('NODE_ENV', {
     is: 'production',
-    then: Joi.string()
-      .pattern(/^rzp_live_/)
-      .required(),
+    then: Joi.when('APP_ENV', {
+      is: 'staging',
+      then: Joi.string()
+        .pattern(/^rzp_test_/)
+        .required(),
+      otherwise: Joi.string()
+        .pattern(/^rzp_live_/)
+        .required(),
+    }),
     otherwise: Joi.string().default('rzp_test_placeholder'),
   }),
   RAZORPAY_KEY_SECRET: Joi.when('NODE_ENV', {

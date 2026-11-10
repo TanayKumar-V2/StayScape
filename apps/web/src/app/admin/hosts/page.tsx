@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AccessibleDialog } from '@/components/ui/accessible-dialog';
 import Link from 'next/link';
 import { adminApi } from '@/lib/api';
@@ -41,36 +41,39 @@ export default function AdminHostsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const fetchHosts = async (page = 1) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await adminApi.getHosts({
-        page,
-        limit: 10,
-        search: search.trim() || undefined,
-        status: statusFilter !== 'ALL' ? statusFilter : undefined,
-      });
+  const fetchHosts = useCallback(
+    async (page = 1) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await adminApi.getHosts({
+          page,
+          limit: 10,
+          search: search.trim() || undefined,
+          status: statusFilter !== 'ALL' ? statusFilter : undefined,
+        });
 
-      if (res.data) {
-        setHosts(res.data.data);
-        setMeta(res.data.meta);
-      } else {
-        setError(res.error ?? 'Failed to load hosts');
+        if (res.data) {
+          setHosts(res.data.data);
+          setMeta(res.data.meta);
+        } else {
+          setError(res.error ?? 'Failed to load hosts');
+        }
+      } catch {
+        setError('Network error while loading host profiles');
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      setError('Network error while loading host profiles');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [search, statusFilter],
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
       void fetchHosts(1);
     }, 250);
     return () => clearTimeout(timer);
-  }, [search, statusFilter]);
+  }, [fetchHosts]);
 
   const handleAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,14 +100,6 @@ export default function AdminHostsPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const formatPaise = (paise: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(paise / 100);
   };
 
   return (
@@ -166,7 +161,7 @@ export default function AdminHostsPage() {
                 <th className="py-3 px-4 font-semibold uppercase tracking-wider">Host</th>
                 <th className="py-3 px-4 font-semibold uppercase tracking-wider">Status</th>
                 <th className="py-3 px-4 font-semibold uppercase tracking-wider">Properties</th>
-                <th className="py-3 px-4 font-semibold uppercase tracking-wider">Gross Volume</th>
+                <th className="py-3 px-4 font-semibold uppercase tracking-wider">Account</th>
                 <th className="py-3 px-4 font-semibold uppercase tracking-wider">Joined</th>
                 <th className="py-3 px-4 font-semibold uppercase tracking-wider text-right">
                   Actions
@@ -187,7 +182,7 @@ export default function AdminHostsPage() {
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] flex items-center justify-center font-semibold text-xs shrink-0">
-                          {h.displayName[0]}
+                          {h.displayName?.[0] || 'H'}
                         </div>
                         <div className="min-w-0">
                           <Link
@@ -197,7 +192,7 @@ export default function AdminHostsPage() {
                             {h.displayName}
                           </Link>
                           <p className="text-[11px] text-[var(--text-secondary)] truncate">
-                            {h.user.email}
+                            {h.userEmail}
                           </p>
                         </div>
                       </div>
@@ -226,17 +221,17 @@ export default function AdminHostsPage() {
                     {/* Properties */}
                     <td className="py-3.5 px-4 text-[var(--text-secondary)]">
                       <span className="font-semibold text-[var(--text-primary)]">
-                        {h.counts.publishedProperties}
+                        {h.publishedProperties}
                       </span>{' '}
                       published
-                      <span className="text-[11px] block">({h.counts.properties} total)</span>
+                      <span className="text-[11px] block">({h.totalProperties} total)</span>
                     </td>
 
-                    {/* Gross Volume */}
+                    {/* Host account status */}
                     <td className="py-3.5 px-4 font-semibold text-[var(--text-primary)]">
-                      {formatPaise(h.metrics.grossVolumePaise)}
+                      {h.userStatus}
                       <span className="text-[11px] text-[var(--text-secondary)] block font-normal">
-                        {h.metrics.completedStays} completed stay(s)
+                        {h.userName || 'Account holder'}
                       </span>
                     </td>
 

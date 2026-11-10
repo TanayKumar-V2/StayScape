@@ -1,0 +1,141 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# StayScape — Render Infrastructure Blueprint Specification
+# Services: NestJS REST API, BullMQ Background Worker, Managed Redis (Key Value)
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  # ── 1. Web Service: StayScape API & Socket.IO Gateway ───────────────────────
+  - type: web
+    name: stayscape-api
+    runtime: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./Dockerfile.api
+    dockerContext: .
+    autoDeploy: false
+    healthCheckPath: /api/v1/health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: ENABLE_WORKERS
+        value: false
+      - key: HSTS_ENABLED
+        value: true
+      - key: TRUSTED_PROXIES
+        value: loopback
+      - key: WEB_ORIGIN
+        sync: false # Supply production frontend origin (e.g., https://www.stayscape.example)
+      - key: WEB_ORIGINS
+        sync: false # Additional allowed origins (e.g. preview/staging subdomains)
+      - key: COOKIE_DOMAIN
+        sync: false # Shared parent domain for cookie sharing (e.g., .stayscape.example)
+      - key: DATABASE_URL
+        sync: false # Pooled Neon connection string containing -pooler
+      - key: DIRECT_URL
+        sync: false # Direct Neon connection string without -pooler
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: stayscape-redis
+          property: connectionString
+      - key: ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRES_IN
+        value: 15m
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: 7d
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET_PREVIOUS
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: GROQ_ENABLED
+        value: true
+      - key: GROQ_TIMEOUT_MS
+        value: 15000
+      - key: GROQ_MAX_RETRIES
+        value: 1
+
+  # ── 2. Background Worker: BullMQ Job Processors & Schedulers ───────────────
+  - type: worker
+    name: stayscape-worker
+    runtime: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./Dockerfile.worker
+    dockerContext: .
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: production
+      - key: ENABLE_WORKERS
+        value: true
+      - key: DATABASE_URL
+        sync: false # Pooled Neon connection string containing -pooler
+      - key: DIRECT_URL
+        sync: false # Direct Neon connection string without -pooler
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: stayscape-redis
+          property: connectionString
+      - key: ACCESS_TOKEN_SECRET
+        fromService:
+          type: web
+          name: stayscape-api
+          envVarKey: ACCESS_TOKEN_SECRET
+      - key: REFRESH_TOKEN_SECRET
+        fromService:
+          type: web
+          name: stayscape-api
+          envVarKey: REFRESH_TOKEN_SECRET
+      - key: RAZORPAY_KEY_ID
+        fromService:
+          type: web
+          name: stayscape-api
+          envVarKey: RAZORPAY_KEY_ID
+      - key: RAZORPAY_KEY_SECRET
+        fromService:
+          type: web
+          name: stayscape-api
+          envVarKey: RAZORPAY_KEY_SECRET
+      - key: RAZORPAY_WEBHOOK_SECRET
+        fromService:
+          type: web
+          name: stayscape-api
+          envVarKey: RAZORPAY_WEBHOOK_SECRET
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: GROQ_ENABLED
+        value: true
+
+  # ── 3. Managed Redis (Render Key Value) ─────────────────────────────────────
+  - type: redis
+    name: stayscape-redis
+    region: oregon
+    plan: starter
+    maxmemoryPolicy: noeviction # Required for BullMQ job queue durability
+    ipAllowList: [] # Private network only — zero public exposure
+

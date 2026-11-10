@@ -28,7 +28,7 @@ export function CategoryBar({
   const categories: Array<{
     id: string;
     label: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   }> = [
     { id: 'All', label: 'All Stays', icon: Grid },
     { id: 'Beachfront', label: 'Beachfront', icon: Umbrella },
@@ -42,14 +42,9 @@ export function CategoryBar({
   ];
 
   return (
-    <div
-      className={cn(
-        'w-full border-b border-[var(--border)] bg-[var(--bg-primary)]/80 py-4',
-        className,
-      )}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth py-1">
+    <div className={cn('w-full border-b border-[#deddd3] bg-transparent py-1', className)}>
+      <div className="mx-auto max-w-[1320px] px-1 sm:px-2 lg:px-4">
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-1 sm:gap-6 lg:gap-9">
           {categories.map((cat) => {
             const Icon = cat.icon;
             const isSelected = selectedCategory === cat.id;
@@ -60,25 +55,19 @@ export function CategoryBar({
                 type="button"
                 onClick={() => onSelectCategory?.(cat.id)}
                 className={cn(
-                  'flex flex-col items-center gap-1.5 px-3.5 py-2 rounded-2xl transition-all duration-200 shrink-0 group focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]',
-                  isSelected
-                    ? 'bg-white shadow-sm border border-[var(--border)] text-[var(--text-primary)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/60 border border-transparent',
+                  'group relative flex shrink-0 flex-col items-center gap-2 px-2.5 py-3 text-[11px] font-medium transition-colors duration-500 ease-[cubic-bezier(.32,.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]',
+                  isSelected ? 'text-[#294538]' : 'text-[#7b8178] hover:text-[#294538]',
                 )}
               >
-                <div
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.35} />
+                <span className="whitespace-nowrap tracking-[.01em]">{cat.label}</span>
+                <span
+                  aria-hidden="true"
                   className={cn(
-                    'p-2 rounded-xl transition-colors',
-                    isSelected
-                      ? 'bg-[var(--accent-primary)] text-white'
-                      : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] group-hover:bg-[var(--bg-secondary)]',
+                    'absolute inset-x-2 -bottom-[5px] h-px origin-center bg-[#9b6c4d] transition-transform duration-500 ease-[cubic-bezier(.32,.72,0,1)]',
+                    isSelected ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100',
                   )}
-                >
-                  <Icon className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-medium tracking-tight whitespace-nowrap">
-                  {cat.label}
-                </span>
+                />
               </button>
             );
           })}

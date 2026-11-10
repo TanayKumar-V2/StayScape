@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AccessibleDialog } from '@/components/ui/accessible-dialog';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -25,7 +25,7 @@ export default function AdminHostDetailsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
-  const fetchHostDetails = async () => {
+  const fetchHostDetails = useCallback(async () => {
     if (!hostProfileId) return;
     setIsLoading(true);
     setError(null);
@@ -41,11 +41,11 @@ export default function AdminHostDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [hostProfileId]);
 
   useEffect(() => {
     void fetchHostDetails();
-  }, [hostProfileId]);
+  }, [fetchHostDetails]);
 
   const handleAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,14 +71,6 @@ export default function AdminHostDetailsPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const formatPaise = (paise: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(paise / 100);
   };
 
   if (isLoading) {
@@ -194,7 +186,7 @@ export default function AdminHostDetailsPage() {
             Published Listings
           </span>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">
-            {host.counts.publishedProperties}
+            {host.stats.publishedProperties}
           </p>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-[var(--border)] shadow-xs">
@@ -202,23 +194,23 @@ export default function AdminHostDetailsPage() {
             Total Listings
           </span>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">
-            {host.counts.properties}
+            {host.stats.totalProperties}
           </p>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-[var(--border)] shadow-xs">
           <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-            Completed Stays
+            Draft Listings
           </span>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">
-            {host.metrics.completedStays}
+            {host.stats.draftProperties}
           </p>
         </div>
         <div className="p-4 bg-white rounded-2xl border border-[var(--border)] shadow-xs">
           <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
-            Gross Volume
+            Paused Listings
           </span>
           <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">
-            {formatPaise(host.metrics.grossVolumePaise)}
+            {host.stats.pausedProperties}
           </p>
         </div>
       </div>
@@ -252,9 +244,14 @@ export default function AdminHostDetailsPage() {
                         {p.title}
                       </Link>
                     </td>
-                    <td className="py-3 text-[var(--text-secondary)]">{p.city}</td>
+                    <td className="py-3 text-[var(--text-secondary)]">{p.location}</td>
                     <td className="py-3 font-medium text-[var(--text-primary)]">
-                      {formatPaise(p.basePricePaise)}/night
+                      {new Intl.NumberFormat('en-IN', {
+                        style: 'currency',
+                        currency: 'INR',
+                        maximumFractionDigits: 0,
+                      }).format(p.pricePerNightPaise / 100)}
+                      /night
                     </td>
                     <td className="py-3">
                       <span className="font-medium text-[11px] uppercase">{p.status}</span>

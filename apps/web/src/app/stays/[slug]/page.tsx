@@ -39,6 +39,11 @@ import { Badge } from '@/components/ui/badge';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{
+    checkIn?: string | string[];
+    checkOut?: string | string[];
+    guests?: string | string[];
+  }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -76,8 +81,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PropertyDetailPage({ params }: PageProps) {
-  const { slug } = await params;
+export default async function PropertyDetailPage({ params, searchParams }: PageProps) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const checkIn = Array.isArray(query.checkIn) ? query.checkIn[0] : query.checkIn;
+  const checkOut = Array.isArray(query.checkOut) ? query.checkOut[0] : query.checkOut;
+  const parsedGuests = Number(Array.isArray(query.guests) ? query.guests[0] : query.guests);
+  const guests =
+    Number.isInteger(parsedGuests) && parsedGuests > 0 && parsedGuests <= 16 ? parsedGuests : 1;
   const res = await publicPropertiesApi.getBySlug(slug);
   const property = res.data;
 
@@ -446,6 +456,9 @@ export default async function PropertyDetailPage({ params }: PageProps) {
               propertySlug={property.slug}
               pricePerNightPaise={property.pricePerNightPaise}
               maxGuests={property.maxGuests}
+              initialCheckIn={checkIn}
+              initialCheckOut={checkOut}
+              initialGuests={guests}
             />
 
             <div className="p-4 rounded-2xl bg-white border border-[var(--border)] text-center shadow-sm">

@@ -23,6 +23,7 @@ import { useWishlist } from '@/context/wishlist-context';
 
 export function Navbar() {
   const pathname = usePathname();
+  const isHome = pathname === '/';
   const { user, isAuthenticated, logout } = useAuth();
   const { wishlistCount } = useWishlist();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,15 +49,30 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-[var(--bg-primary)]/90 backdrop-blur-md border-b border-[var(--border)] transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <header
+        className={cn(
+          'z-40 transition-all duration-700 ease-[cubic-bezier(.32,.72,0,1)]',
+          isHome
+            ? 'fixed left-1/2 top-4 w-[calc(100%-2rem)] max-w-[1320px] -translate-x-1/2 rounded-full border border-white/70 bg-[#f8f7f1]/85 shadow-[0_18px_46px_-36px_rgba(28,46,35,.55)] backdrop-blur-2xl'
+            : 'sticky top-0 w-full border-b border-[var(--border)] bg-[var(--bg-primary)]/90 backdrop-blur-md',
+        )}
+      >
+        <div
+          className={cn(
+            'mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8',
+            isHome ? 'h-[68px]' : 'h-20',
+          )}
+        >
           {/* Brand Logo */}
           <Link
             href="/"
             className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] rounded-xl p-1"
           >
             <div className="w-10 h-10 rounded-xl bg-[var(--accent-primary)] text-white flex items-center justify-center shadow-sm group-hover:bg-[var(--accent-primary-hover)] transition-colors">
-              <Compass className="w-5 h-5 transition-transform group-hover:rotate-45 duration-300" />
+              <Compass
+                className="w-5 h-5 transition-transform duration-700 ease-[cubic-bezier(.32,.72,0,1)] group-hover:rotate-45"
+                strokeWidth={1.35}
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-serif text-2xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -69,7 +85,14 @@ export function Navbar() {
           </Link>
 
           {/* Center Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1 bg-[var(--bg-secondary)] p-1.5 rounded-full border border-[var(--border)]">
+          <nav
+            className={cn(
+              'hidden items-center gap-1 md:flex',
+              isHome
+                ? 'rounded-full px-1 py-1'
+                : 'rounded-full border border-[var(--border)] bg-[var(--bg-secondary)] p-1.5',
+            )}
+          >
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -77,7 +100,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    'px-4 sm:px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5',
+                    'px-4 sm:px-5 py-2 rounded-full text-[13px] font-medium transition-all duration-500 ease-[cubic-bezier(.32,.72,0,1)] flex items-center gap-1.5',
                     isActive
                       ? 'bg-white text-[var(--text-primary)] shadow-sm'
                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/60',

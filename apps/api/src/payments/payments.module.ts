@@ -14,6 +14,11 @@ import { PaymentWebhookProcessor } from './processors/payment-webhook.processor'
 import { PaymentRefundProcessor } from './processors/payment-refund.processor';
 import { PaymentReconciliationProcessor } from './processors/payment-reconciliation.processor';
 
+const paymentWorkerProviders =
+  process.env['ENABLE_WORKERS'] === 'false'
+    ? []
+    : [PaymentWebhookProcessor, PaymentRefundProcessor, PaymentReconciliationProcessor];
+
 @Module({
   imports: [
     PrismaModule,
@@ -31,9 +36,7 @@ import { PaymentReconciliationProcessor } from './processors/payment-reconciliat
     RefundService,
     PaymentsService,
     RazorpayWebhookService,
-    PaymentWebhookProcessor,
-    PaymentRefundProcessor,
-    PaymentReconciliationProcessor,
+    ...paymentWorkerProviders,
   ],
   exports: [PaymentsService, RazorpayService, PaymentReconciliationService, RefundService],
 })

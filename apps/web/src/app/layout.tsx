@@ -1,22 +1,29 @@
 import type { Metadata } from 'next';
-import { DM_Serif_Display, DM_Sans } from 'next/font/google';
+import { Archivo, Instrument_Sans, Newsreader } from 'next/font/google';
 import './globals.css';
-import { Navbar } from '@/components/layout/navbar';
-import { Footer } from '@/components/layout/footer';
+import 'lenis/dist/lenis.css';
+import { SiteChrome } from '@/components/layout/site-chrome';
 import { AuthProvider } from '@/context/auth-context';
 import { WishlistProvider } from '@/context/wishlist-context';
 
-const dmSerif = DM_Serif_Display({
-  weight: '400',
+const archivo = Archivo({
+  weight: ['500', '600', '700'],
   subsets: ['latin'],
-  variable: '--font-dm-serif',
+  variable: '--font-archivo',
   display: 'swap',
 });
 
-const dmSans = DM_Sans({
+const instrumentSans = Instrument_Sans({
   weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
-  variable: '--font-dm-sans',
+  variable: '--font-instrument-sans',
+  display: 'swap',
+});
+
+const newsreader = Newsreader({
+  weight: ['400', '500'],
+  subsets: ['latin'],
+  variable: '--font-newsreader',
   display: 'swap',
 });
 
@@ -37,13 +44,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmSerif.variable} ${dmSans.variable} scroll-smooth`}>
+    <html
+      lang="en"
+      className={`${archivo.variable} ${instrumentSans.variable} ${newsreader.variable}`}
+    >
       <body className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased selection:bg-[var(--accent-primary)]/20 selection:text-[var(--text-primary)]">
         <AuthProvider>
           <WishlistProvider>
-            <Navbar />
-            <div className="flex-1">{children}</div>
-            <Footer />
+            <SiteChrome>{children}</SiteChrome>
           </WishlistProvider>
         </AuthProvider>
       </body>
